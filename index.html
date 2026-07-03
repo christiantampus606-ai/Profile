@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dota 2 Draft Simulator — Patch 7.41d</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-dark: #0b0e13;
+    --bg-panel: #151a23;
+    --bg-card: #1e2531;
+    --bg-hover: #2a3342;
+    --radiant: #6ec860;
+    --radiant-dark: #2d5a2a;
+    --dire: #c85a5a;
+    --dire-dark: #5a2d2d;
+    --gold: #e8c36a;
+    --text: #e8eaf0;
+    --text-dim: #8a94a6;
+    --border: #2a3342;
+    --accent: #4a90e2;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0b0e13 0%, #1a1f2e 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 24px;
+    background: var(--bg-panel);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  header h1 {
+    font-size: 30px;
+    background: linear-gradient(90deg, var(--radiant), var(--gold), var(--dire));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  header .subtitle { color: var(--text-dim); font-size: 14px; }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .team-panel {
+    background: var(--bg-panel);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  .team-panel.radiant { border-top: 3px solid var(--radiant); }
+  .team-panel.dire { border-top: 3px solid var(--dire); }
+  .team-panel.active-side { box-shadow: 0 0 0 1px var(--gold) inset; }
+  .team-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .team-title .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  .radiant .team-title .dot { background: var(--radiant); box-shadow: 0 0 8px var(--radiant); }
+  .dire .team-title .dot { background: var(--dire); box-shadow: 0 0 8px var(--dire); }
+  .draft-slots { display: flex; flex-direction: column; gap: 8px; }
+
+  .draft-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    min-height: 64px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .draft-slot.filled {
+    background: var(--bg-hover);
+    animation: slotFill 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes slotFill {
+    from { transform: scale(0.95); opacity: 0.5; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .draft-slot.active-pick {
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(232, 195, 106, 0.35);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(232, 195, 106, 0.3); }
+    50% { box-shadow: 0 0 22px rgba(232, 195, 106, 0.6); }
+  }
+  .slot-number {
+    width: 24px; height: 24px;
+    background: var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+  }
+  .active-pick .slot-number { background: var(--gold); color: #000; }
+  .slot-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .hero-icon {
+    width: 52px; height: 29px;
+    background: var(--bg-dark);
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .hero-icon.placeholder {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 10px;
+  }
+  .hero-info { flex: 1; min-width: 0; }
+  .hero-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-attr { font-size: 11px; color: var(--text-dim); }
+  .remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  .remove-btn:hover { background: var(--dire-dark); color: var(--dire); }
+
+  .center-panel {
+    background: var(--bg-panel);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    max-height: 620px;
+  }
+  .turn-indicator {
+    text-align: center;
+    padding: 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  .side-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .side-toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .side-toggle-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
+  .side-toggle-btn.active.radiant { border-color: var(--radiant); background: var(--radiant-dark); color: #fff; box-shadow: 0 0 12px rgba(110, 200, 96, 0.25); }
+  .side-toggle-btn.active.dire { border-color: var(--dire); background: var(--dire-dark); color: #fff; box-shadow: 0 0 12px rgba(200, 90, 90, 0.25); }
+
+  .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.25s ease;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15); }
+  .filter-btn {
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .filter-btn:hover { color: var(--text); background: var(--bg-hover); }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .hero-pool {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    padding-right: 4px;
+  }
+  .hero-pool::-webkit-scrollbar { width: 6px; }
+  .hero-pool::-webkit-scrollbar-track { background: var(--bg-dark); border-radius: 3px; }
+  .hero-pool::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .hero-pool::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .hero-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: cardFadeIn 0.3s ease backwards;
+  }
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-card:hover {
+    background: var(--bg-hover);
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  }
+  .hero-card.disabled { opacity: 0.25; cursor: not-allowed; filter: grayscale(0.6); }
+  .hero-card.disabled:hover { transform: none; background: var(--bg-card); border-color: var(--border); box-shadow: none; }
+  .hero-card img {
+    width: 100%; height: 50px;
+    object-fit: cover; border-radius: 3px;
+    background: var(--bg-dark);
+  }
+  .hero-card .name {
+    font-size: 11px; text-align: center;
+    font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hero-card .wr { font-size: 10px; text-align: center; color: var(--gold); font-weight: 600; }
+
+  /* Suggestions Panel — now two sections */
+  .suggestions-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .suggestions-panel {
+    background: var(--bg-panel);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  .suggestions-panel.counter-panel { border-top: 3px solid var(--dire); }
+  .suggestions-panel.synergy-panel { border-top: 3px solid var(--radiant); }
+  .suggestions-header { margin-bottom: 12px; }
+  .suggestions-header h3 { font-size: 16px; margin-bottom: 4px; }
+  .suggestions-subtitle { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+
+  .suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .suggestions-list::-webkit-scrollbar { width: 6px; }
+  .suggestions-list::-webkit-scrollbar-track { background: var(--bg-dark); }
+  .suggestions-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .suggestion-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: sugFadeIn 0.35s ease backwards;
+  }
+  @keyframes sugFadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .suggestion-card:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .suggestion-card img {
+    width: 64px; height: 36px;
+    object-fit: cover; border-radius: 4px;
+    flex-shrink: 0;
+    background: var(--bg-dark);
+  }
+  .suggestion-info { flex: 1; min-width: 0; }
+  .suggestion-name { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .suggestion-name .counters-label {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--dire-dark);
+    color: var(--dire);
+    border-radius: 4px;
+    font-size: 9px;
+    margin-left: 4px;
+    vertical-align: middle;
+    font-weight: 700;
+  }
+  .suggestion-name .synergy-label {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--radiant-dark);
+    color: var(--radiant);
+    border-radius: 4px;
+    font-size: 9px;
+    margin-left: 4px;
+    vertical-align: middle;
+    font-weight: 700;
+  }
+  .suggestion-reason { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+  .win-rate-badge {
+    padding: 4px 10px;
+    background: var(--bg-dark);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .win-rate-badge.high { color: var(--radiant); }
+  .win-rate-badge.low { color: var(--dire); }
+  .suggestion-card:hover .win-rate-badge { transform: scale(1.05); }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .ctrl-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
+  .ctrl-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ctrl-btn.primary:hover { background: #3a7bc8; }
+
+  /* Q&A Panel */
+  .qa-panel {
+    background: var(--bg-panel);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .qa-header { margin-bottom: 12px; }
+  .qa-header h3 { font-size: 16px; }
+  .qa-header .hint { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .qa-chat {
+    background: var(--bg-dark);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 180px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .qa-chat::-webkit-scrollbar { width: 6px; }
+  .qa-chat::-webkit-scrollbar-track { background: transparent; }
+  .qa-chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .qa-msg {
+    display: flex;
+    gap: 10px;
+    animation: msgFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes msgFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .qa-msg.user { flex-direction: row-reverse; }
+  .qa-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+  .qa-msg.user .qa-avatar { background: var(--accent); color: #fff; }
+  .qa-msg.bot .qa-avatar { background: var(--gold); color: #000; }
+  .qa-bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .qa-msg.user .qa-bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .qa-msg.bot .qa-bubble {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .qa-bubble .hero-ref {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--bg-dark);
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--gold);
+    margin: 0 2px;
+  }
+  .qa-input-row { display: flex; gap: 8px; }
+  .qa-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.25s ease;
+  }
+  .qa-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15); }
+  .qa-send {
+    padding: 10px 22px;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .qa-send:hover { background: #3a7bc8; transform: translateY(-1px); }
+  .qa-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .quick-questions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .quick-q {
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+  }
+  .quick-q:hover { background: var(--bg-hover); color: var(--text); border-color: var(--accent); transform: translateY(-1px); }
+
+  @media (max-width: 1024px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .suggestions-wrapper { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>⚔️ Dota 2 Draft Simulator</h1>
+    <div class="subtitle">Patch 7.41d • You control both sides • Counter & synergy suggestions powered by meta data</div>
+  </header>
+
+  <div class="main-grid">
+    <div class="team-panel radiant" id="radiantPanel">
+      <div class="team-title"><span class="dot"></span>Radiant</div>
+      <div class="draft-slots" id="radiantSlots"></div>
+    </div>
+
+    <div class="center-panel">
+      <div class="turn-indicator" id="turnIndicator">Select a side, then pick a hero</div>
+      <div class="side-toggle">
+        <button class="side-toggle-btn radiant active" data-side="radiant">🟢 Picking for Radiant</button>
+        <button class="side-toggle-btn dire" data-side="dire">🔴 Picking for Dire</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search heroes...">
+        <button class="filter-btn" data-attr="str">STR</button>
+        <button class="filter-btn" data-attr="agi">AGI</button>
+        <button class="filter-btn" data-attr="int">INT</button>
+        <button class="filter-btn" data-attr="uni">UNI</button>
+      </div>
+      <div class="hero-pool" id="heroPool"></div>
+      <div class="controls">
+        <button class="ctrl-btn" id="undoBtn">↶ Undo</button>
+        <button class="ctrl-btn primary" id="resetBtn">Reset Draft</button>
+      </div>
+    </div>
+
+    <div class="team-panel dire" id="direPanel">
+      <div class="team-title"><span class="dot"></span>Dire</div>
+      <div class="draft-slots" id="direSlots"></div>
+    </div>
+  </div>
+
+  <!-- Two separate suggestion panels -->
+  <div class="suggestions-wrapper">
+    <div class="suggestions-panel counter-panel">
+      <div class="suggestions-header">
+        <h3>🎯 Counters to Enemy</h3>
+        <div class="suggestions-subtitle" id="counterSubtitle">Heroes that counter the enemy team's picks</div>
+      </div>
+      <div class="suggestions-list" id="counterList">
+        <div class="empty-state">Pick heroes for the enemy team to see counter suggestions</div>
+      </div>
+    </div>
+
+    <div class="suggestions-panel synergy-panel">
+      <div class="suggestions-header">
+        <h3>🤝 Synergies with Allies</h3>
+        <div class="suggestions-subtitle" id="synergySubtitle">Heroes that combo well with your current picks</div>
+      </div>
+      <div class="suggestions-list" id="synergyList">
+        <div class="empty-state">Pick heroes for your team to see synergy suggestions</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="qa-panel">
+    <div class="qa-header">
+      <h3>💬 Draft Analyst Q&A</h3>
+      <div class="hint">Complete the draft (or pick some heroes) and ask questions about the matchup</div>
+    </div>
+    <div class="quick-questions" id="quickQuestions">
+      <button class="quick-q" data-q="Which team has the advantage?">Which team has the advantage?</button>
+      <button class="quick-q" data-q="Analyze the win conditions">Analyze win conditions</button>
+      <button class="quick-q" data-q="Who wins teamfights?">Who wins teamfights?</button>
+      <button class="quick-q" data-q="Who wins late game?">Who wins late game?</button>
+      <button class="quick-q" data-q="Key matchups to watch">Key matchups</button>
+      <button class="quick-q" data-q="Draft mistakes?">Any draft mistakes?</button>
+    </div>
+    <div class="qa-chat" id="qaChat">
+      <div class="qa-msg bot">
+        <div class="qa-avatar">AI</div>
+        <div class="qa-bubble">Welcome, captain! 👋 Once you start drafting, ask me anything about the matchup — win conditions, timings, key counters, or draft mistakes. I'll analyze based on Patch 7.41d meta data.</div>
+      </div>
+    </div>
+    <div class="qa-input-row">
+      <input type="text" class="qa-input" id="qaInput" placeholder="Ask about the draft... (e.g., 'Who wins late game?')">
+      <button class="qa-send" id="qaSend">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   PATCH DATA MODULE
+   ========================================================= */
+const PatchData = { version: "7.41d", lastUpdated: "2026-07-03" };
+
+/* NOTE: image keys must match Steam CDN filenames exactly */
+const HeroesDB = {
+  anti_mage:       { name: "Anti-Mage",          attr: "agi", roles: ["Carry","Escape"],     winRate: 52.1, img: "antimage",            timing: "late" },
+  axe:             { name: "Axe",                attr: "str", roles: ["Initiator","Tank"],    winRate: 50.8, img: "axe",                 timing: "mid" },
+  crystal_maiden:  { name: "Crystal Maiden",     attr: "int", roles: ["Support","Nuker"],    winRate: 51.2, img: "crystal_maiden",      timing: "early" },
+  dazzle:          { name: "Dazzle",             attr: "uni", roles: ["Support","Healer"],   winRate: 51.5, img: "dazzle",              timing: "mid" },
+  doom:            { name: "Doom",               attr: "str", roles: ["Carry","Disabler"],   winRate: 50.4, img: "doom_bringer",        timing: "mid" },
+  earthshaker:     { name: "Earthshaker",        attr: "str", roles: ["Initiator","Nuker"],  winRate: 51.8, img: "earthshaker",         timing: "mid" },
+  faceless_void:   { name: "Faceless Void",      attr: "agi", roles: ["Carry","Initiator"],  winRate: 51.1, img: "faceless_void",       timing: "late" },
+  invoker:         { name: "Invoker",            attr: "uni", roles: ["Nuker","Carry"],      winRate: 49.2, img: "invoker",             timing: "mid" },
+  juggernaut:      { name: "Juggernaut",         attr: "agi", roles: ["Carry","Pusher"],     winRate: 52.4, img: "juggernaut",          timing: "mid" },
+  keeper_of_light: { name: "Keeper of the Light",attr: "int", roles: ["Support","Healer"],   winRate: 50.9, img: "keeper_of_the_light", timing: "mid" },
+  kez:             { name: "Kez",                attr: "agi", roles: ["Carry","Escape"],     winRate: 49.8, img: "kez",                 timing: "mid" },
+  legion_commander:{ name: "Legion Commander",   attr: "str", roles: ["Carry","Disabler"],   winRate: 51.3, img: "legion_commander",    timing: "mid" },
+  lifestealer:     { name: "Lifestealer",        attr: "str", roles: ["Carry","Durable"],    winRate: 53.2, img: "life_stealer",        timing: "mid" },
+  lion:            { name: "Lion",               attr: "int", roles: ["Support","Disabler"], winRate: 50.5, img: "lion",                timing: "early" },
+  luna:            { name: "Luna",               attr: "agi", roles: ["Carry","Nuker"],      winRate: 51.7, img: "luna",                timing: "mid" },
+  morphling:       { name: "Morphling",          attr: "agi", roles: ["Carry","Escape"],     winRate: 48.9, img: "morphling",           timing: "late" },
+  omniknight:      { name: "Omniknight",         attr: "str", roles: ["Support","Healer"],   winRate: 51.6, img: "omniknight",          timing: "mid" },
+  phantom_assassin:{ name: "Phantom Assassin",   attr: "agi", roles: ["Carry","Escape"],     winRate: 50.2, img: "phantom_assassin",    timing: "late" },
+  pudge:           { name: "Pudge",              attr: "str", roles: ["Disabler","Initiator"],winRate: 50.1, img: "pudge",               timing: "mid" },
+  queen_of_pain:   { name: "Queen of Pain",      attr: "int", roles: ["Nuker","Carry"],      winRate: 51.4, img: "queen_of_pain",       timing: "mid" },
+  rubick:          { name: "Rubick",             attr: "int", roles: ["Support","Nuker"],    winRate: 49.7, img: "rubick",              timing: "mid" },
+  shadow_fiend:    { name: "Shadow Fiend",       attr: "agi", roles: ["Carry","Nuker"],      winRate: 51.0, img: "nevermore",           timing: "mid" },
+  slark:           { name: "Slark",              attr: "agi", roles: ["Carry","Escape"],     winRate: 53.5, img: "slark",               timing: "mid" },
+  sniper:          { name: "Sniper",             attr: "agi", roles: ["Carry","Nuker"],      winRate: 50.6, img: "sniper",              timing: "late" },
+  storm_spirit:    { name: "Storm Spirit",       attr: "uni", roles: ["Carry","Escape"],     winRate: 50.3, img: "storm_spirit",        timing: "mid" },
+  sven:            { name: "Sven",               attr: "str", roles: ["Carry","Nuker"],      winRate: 51.9, img: "sven",                timing: "mid" },
+  tiny:            { name: "Tiny",               attr: "str", roles: ["Carry","Nuker"],      winRate: 50.7, img: "tiny",                timing: "mid" },
+  void_spirit:     { name: "Void Spirit",        attr: "uni", roles: ["Carry","Escape"],     winRate: 49.5, img: "void_spirit",         timing: "mid" },
+  wraith_king:     { name: "Wraith King",        attr: "str", roles: ["Carry","Durable"],    winRate: 58.1, img: "skeleton_king",       timing: "late" },
+  witch_doctor:    { name: "Witch Doctor",       attr: "int", roles: ["Support","Nuker"],    winRate: 52.3, img: "witch_doctor",        timing: "mid" }
+};
+
+/* Counter data: hero X counters these heroes.
+   Format: { counters: [ { hero: "victim", reason, winRate } ] } */
+const CounterData = {
+  axe: { counters: [
+    { hero: "anti_mage", reason: "Berserker's Call forces AM to attack, triggering Counter Helix. AM cannot Blink away.", winRate: 56.2 },
+    { hero: "slark", reason: "Call prevents Dark Pact from purging. Counter Helix shreds Slark in melee.", winRate: 55.6 },
+    { hero: "juggernaut", reason: "Call bypasses Blade Fury immunity. Counter Helix punishes Jugg's melee attacks.", winRate: 55.4 },
+    { hero: "wraith_king", reason: "Counter Helix procs while WK attacks. Call forces WK into bad positions.", winRate: 54.1 },
+    { hero: "lifestealer", reason: "Call prevents Rage usage. Counter Helix shreds LS in melee.", winRate: 55.8 },
+    { hero: "morphling", reason: "Axe's tankiness and Call shut down Morphling's squishy early game.", winRate: 54.7 }
+  ]},
+  omniknight: { counters: [
+    { hero: "axe", reason: "Repel blocks Call. Purification heals allies while damaging Axe.", winRate: 57.1 },
+    { hero: "legion_commander", reason: "Repel blocks Duel. LC cannot snowball off Omniknight.", winRate: 57.1 },
+    { hero: "doom", reason: "Repel blocks Doom's ultimate. Purification damages Doom.", winRate: 57.8 }
+  ]},
+  anti_mage: { counters: [
+    { hero: "invoker", reason: "AM has no magic immunity early. EMP burns Blink mana.", winRate: 55.1 },
+    { hero: "lion", reason: "Mana Drain + Earth Spike + Hex shut down AM before BFB timing.", winRate: 54.3 },
+    { hero: "legion_commander", reason: "Duel locks AM in place and prevents Blink escape.", winRate: 54.8 },
+    { hero: "doom", reason: "Doom disables all of AM's abilities including passive mana burn.", winRate: 56.4 }
+  ]},
+  slark: { counters: [
+    { hero: "axe", reason: "Call prevents Dark Pact from purging. Counter Helix shreds Slark.", winRate: 55.6 },
+    { hero: "doom", reason: "Doom disables all of Slark's abilities including passive regen.", winRate: 58.4 },
+    { hero: "legion_commander", reason: "Duel prevents Shadow Dance usage. LC snowballs off Slark.", winRate: 54.9 }
+  ]},
+  legion_commander: { counters: [
+    { hero: "anti_mage", reason: "Duel locks AM in place and prevents Blink escape.", winRate: 54.8 },
+    { hero: "slark", reason: "Duel prevents Shadow Dance usage. LC snowballs off Slark.", winRate: 54.9 },
+    { hero: "faceless_void", reason: "Duel prevents Chronosphere value. LC snowballs off FV.", winRate: 55.2 }
+  ]},
+  doom: { counters: [
+    { hero: "slark", reason: "Doom disables all of Slark's abilities including passive regen.", winRate: 58.4 },
+    { hero: "anti_mage", reason: "Doom disables all of AM's abilities including passive mana burn.", winRate: 56.4 },
+    { hero: "wraith_king", reason: "Doom prevents Reincarnation. WK becomes a free kill.", winRate: 57.2 }
+  ]},
+  phantom_assassin: { counters: [
+    { hero: "axe", reason: "PA's burst and Stifling Dagger kiting prevents Axe from stacking Counter Helix.", winRate: 54.5 },
+    { hero: "sniper", reason: "Sniper's range completely negates PA's approach.", winRate: 55.1 }
+  ]},
+  sniper: { counters: [
+    { hero: "slark", reason: "Slark dives Sniper easily. Dark Pact purges Shrapnel.", winRate: 56.4 },
+    { hero: "storm_spirit", reason: "Storm's Ball Lightning closes gap instantly. Sniper cannot escape.", winRate: 57.1 },
+    { hero: "faceless_void", reason: "Sniper caught in Chronosphere dies instantly.", winRate: 56.9 },
+    { hero: "queen_of_pain", reason: "Sniper has no escape from QoP's burst.", winRate: 56.5 },
+    { hero: "invoker", reason: "Sniper has no escape from Invoker's combo.", winRate: 57.2 },
+    { hero: "pudge", reason: "Sniper has no escape from Hook. Low HP pool means instant kill.", winRate: 56.8 }
+  ]},
+  wraith_king: { counters: [
+    { hero: "axe", reason: "Counter Helix procs while WK attacks. Call forces WK into bad positions.", winRate: 54.1 },
+    { hero: "legion_commander", reason: "Duel prevents Reincarnation value. LC snowballs off WK.", winRate: 53.7 },
+    { hero: "doom", reason: "Doom prevents Reincarnation. WK becomes a free kill.", winRate: 57.2 }
+  ]},
+  lifestealer: { counters: [
+    { hero: "axe", reason: "Call prevents Rage usage. Counter Helix shreds LS in melee.", winRate: 55.8 },
+    { hero: "legion_commander", reason: "Duel prevents Infest escape. LC snowballs off LS.", winRate: 54.5 }
+  ]},
+  juggernaut: { counters: [
+    { hero: "axe", reason: "Call bypasses Blade Fury immunity. Counter Helix punishes Jugg.", winRate: 55.4 },
+    { hero: "legion_commander", reason: "Duel prevents Blade Fury escape. LC snowballs off Jugg.", winRate: 54.2 }
+  ]},
+  invoker: { counters: [
+    { hero: "anti_mage", reason: "AM's Spell Shield blocks Invoker's combo. Mana Void punishes high mana pool.", winRate: 55.1 },
+    { hero: "lifestealer", reason: "LS's Rage blocks Invoker's combo. Infest closes gap.", winRate: 54.8 }
+  ]},
+  faceless_void: { counters: [
+    { hero: "legion_commander", reason: "Duel prevents Chronosphere value. LC snowballs off FV.", winRate: 55.2 },
+    { hero: "axe", reason: "Call during Chrono turns FV's own team against him via Counter Helix.", winRate: 53.8 }
+  ]},
+  morphling: { counters: [
+    { hero: "lion", reason: "Lion's burst deletes Morphling before he can adapt.", winRate: 56.2 },
+    { hero: "axe", reason: "Axe's tankiness and Call shut down Morphling's squishy early game.", winRate: 54.7 }
+  ]},
+  queen_of_pain: { counters: [
+    { hero: "anti_mage", reason: "AM's Spell Shield blocks QoP's nukes. Mana Break destroys QoP's mana pool.", winRate: 55.7 },
+    { hero: "lifestealer", reason: "LS's Rage blocks QoP's nukes. Infest closes gap.", winRate: 54.9 }
+  ]},
+  storm_spirit: { counters: [
+    { hero: "axe", reason: "Call prevents Storm's Ball Lightning escape. Counter Helix shreds Storm.", winRate: 56.8 },
+    { hero: "legion_commander", reason: "Duel prevents Ball Lightning escape. LC snowballs off Storm.", winRate: 55.1 }
+  ]},
+  pudge: { counters: [
+    { hero: "anti_mage", reason: "AM's Blink escapes Hook. Spell Shield blocks Meathook.", winRate: 55.1 },
+    { hero: "slark", reason: "Dark Pact purges Rot slow. Slark's mobility makes him immune to Pudge.", winRate: 55.2 }
+  ]},
+  earthshaker: { counters: [
+    { hero: "anti_mage", reason: "AM's Spell Shield blocks Fissure. Mana Break destroys ES's mana pool.", winRate: 55.4 },
+    { hero: "lifestealer", reason: "LS's Rage blocks Fissure. Infest closes gap and deletes ES.", winRate: 54.6 }
+  ]},
+  shadow_fiend: { counters: [
+    { hero: "axe", reason: "Call prevents SF from Razing. Counter Helix punishes SF's farming.", winRate: 56.1 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes SF before he can stack souls.", winRate: 54.8 }
+  ]},
+  luna: { counters: [
+    { hero: "axe", reason: "Call prevents Luna's Moon Blessing value. Counter Helix shreds Luna.", winRate: 55.6 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes Luna before she can teamfight.", winRate: 55.2 }
+  ]},
+  sven: { counters: [
+    { hero: "slark", reason: "Slark's Dark Pact purges Storm Hammer. Essense Shift melts Sven's armor.", winRate: 55.9 },
+    { hero: "axe", reason: "Call prevents Sven's God's Strength value. Counter Helix shreds Sven.", winRate: 55.3 }
+  ]},
+  crystal_maiden: { counters: [
+    { hero: "slark", reason: "Slark dives CM easily. Dark Pact purges Frostbite.", winRate: 57.2 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes CM before she can cast.", winRate: 56.8 }
+  ]},
+  dazzle: { counters: [
+    { hero: "axe", reason: "Call prevents Dazzle's Shallow Grave value. Counter Helix shreds Dazzle.", winRate: 55.8 },
+    { hero: "doom", reason: "Doom disables Shallow Grave. Dazzle becomes useless.", winRate: 56.4 }
+  ]},
+  lion: { counters: [
+    { hero: "anti_mage", reason: "AM's Spell Shield blocks Lion's nukes. Mana Break destroys Lion's mana pool.", winRate: 56.1 },
+    { hero: "lifestealer", reason: "LS's Rage blocks Lion's disables. Infest closes gap.", winRate: 55.7 }
+  ]},
+  rubick: { counters: [
+    { hero: "slark", reason: "Slark dives Rubick easily. Dark Pact purges Telekinesis.", winRate: 56.5 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes Rubick before he can steal spells.", winRate: 56.1 }
+  ]},
+  keeper_of_light: { counters: [
+    { hero: "slark", reason: "Slark dives KotL easily. Dark Pact purges Illuminate.", winRate: 56.9 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes KotL before he can cast.", winRate: 56.4 }
+  ]},
+  witch_doctor: { counters: [
+    { hero: "slark", reason: "Slark dives WD easily. Dark Pact purges Paralyzing Cask.", winRate: 56.7 },
+    { hero: "storm_spirit", reason: "Storm's mobility deletes WD before he can channel Death Ward.", winRate: 56.2 }
+  ]},
+  void_spirit: { counters: [
+    { hero: "axe", reason: "Call prevents VS's Resonant Pulse escape. Counter Helix shreds VS.", winRate: 56.2 },
+    { hero: "legion_commander", reason: "Duel prevents Dissimulate escape. LC snowballs off VS.", winRate: 55.3 }
+  ]},
+  kez: { counters: [
+    { hero: "axe", reason: "Call prevents Kez's mobility. Counter Helix shreds Kez. 7.41d: Kez nerfed.", winRate: 55.9 },
+    { hero: "legion_commander", reason: "Duel prevents Kez's escape. LC snowballs off Kez.", winRate: 54.8 }
+  ]},
+  tiny: { counters: [
+    { hero: "slark", reason: "Slark's Dark Pact purges Toss. Essense Shift melts Tiny's armor.", winRate: 55.4 },
+    { hero: "axe", reason: "Call prevents Tiny's Toss value. Counter Helix shreds Tiny.", winRate: 55.1 }
+  ]}
+};
+
+/* Synergy data: hero X synergizes with these heroes */
+const SynergyData = {
+  anti_mage: [
+    { hero: "dazzle", reason: "Shallow Grave protects AM during early fights. Shadow Wave heals AM.", winRate: 56.8 },
+    { hero: "omniknight", reason: "Repel protects AM from disables. Guardian Angel lets AM fight without fear.", winRate: 57.2 }
+  ],
+  axe: [
+    { hero: "crystal_maiden", reason: "CM's Crystal Nova slows for Axe's Call. Freezing Field combos with initiation.", winRate: 55.9 },
+    { hero: "witch_doctor", reason: "Cask bounces between enemies pulled in by Call. Death Ward destroys locked enemies.", winRate: 56.4 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Axe's Call. Massive AoE lockdown combo.", winRate: 56.1 }
+  ],
+  slark: [
+    { hero: "dazzle", reason: "Shallow Grave protects Slark during dives. Shadow Wave heals Slark.", winRate: 56.2 },
+    { hero: "omniknight", reason: "Repel protects Slark from disables. Guardian Angel lets Slark fight without fear.", winRate: 57.1 }
+  ],
+  wraith_king: [
+    { hero: "crystal_maiden", reason: "CM's mana regen solves WK's mana issues. Crystal Nova slows for WK's approach.", winRate: 57.5 },
+    { hero: "dazzle", reason: "Shallow Grave protects WK during Reincarnation. Shadow Wave heals WK.", winRate: 56.8 }
+  ],
+  pudge: [
+    { hero: "earthshaker", reason: "Fissure sets up Hook. Echo Slam destroys enemies grouped by Hook+Rot.", winRate: 56.1 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Hook. Pudge can Hook multiple enemies in Chrono.", winRate: 55.7 }
+  ],
+  juggernaut: [
+    { hero: "dazzle", reason: "Shallow Grave protects Jugg during Omnislash. Shadow Wave heals Jugg.", winRate: 57.2 },
+    { hero: "crystal_maiden", reason: "Crystal Nova slows for Jugg's approach. Freezing Field combos with Blade Fury.", winRate: 56.5 }
+  ],
+  lifestealer: [
+    { hero: "faceless_void", reason: "Chronosphere sets up LS's Infest. LS can Infest Void for Chrono+Infest combo.", winRate: 57.8 },
+    { hero: "dazzle", reason: "Shallow Grave protects LS during Rage. Shadow Wave heals LS.", winRate: 56.4 }
+  ],
+  invoker: [
+    { hero: "earthshaker", reason: "Fissure sets up Invoker's combo. Echo Slam destroys enemies grouped by EMP.", winRate: 56.2 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Invoker's combo. Massive burst potential.", winRate: 56.9 }
+  ],
+  sniper: [
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Sniper's Take Aim shots. Sniper deletes locked enemies.", winRate: 57.5 },
+    { hero: "earthshaker", reason: "Fissure sets up Sniper's shots. Echo Slam destroys enemies grouped by Sniper.", winRate: 56.1 }
+  ],
+  shadow_fiend: [
+    { hero: "earthshaker", reason: "Fissure sets up SF's Requiem. Echo Slam destroys enemies grouped by SF.", winRate: 56.4 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for SF's Requiem. SF deletes locked enemies.", winRate: 57.1 }
+  ],
+  queen_of_pain: [
+    { hero: "earthshaker", reason: "Fissure sets up QoP's combo. Echo Slam destroys enemies grouped by QoP.", winRate: 56.2 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for QoP's combo. QoP deletes locked enemies.", winRate: 56.8 }
+  ],
+  storm_spirit: [
+    { hero: "earthshaker", reason: "Fissure sets up Storm's combo. Echo Slam destroys enemies grouped by Storm.", winRate: 56.5 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Storm's combo. Storm deletes locked enemies.", winRate: 57.2 }
+  ],
+  faceless_void: [
+    { hero: "earthshaker", reason: "Echo Slam destroys enemies grouped in Chronosphere. Fissure sets up Chrono.", winRate: 58.1 },
+    { hero: "lifestealer", reason: "LS can Infest Void for Chrono+Infest combo. LS deletes locked enemies.", winRate: 57.8 },
+    { hero: "sniper", reason: "Chronosphere groups enemies for Sniper's Take Aim shots.", winRate: 57.5 }
+  ],
+  legion_commander: [
+    { hero: "earthshaker", reason: "Fissure sets up LC's Duel. Echo Slam destroys enemies grouped by LC.", winRate: 56.4 },
+    { hero: "crystal_maiden", reason: "Crystal Nova slows for LC's approach. Freezing Field combos with Duel.", winRate: 56.1 }
+  ],
+  morphling: [
+    { hero: "dazzle", reason: "Shallow Grave protects Morph during Adaptive Strike. Shadow Wave heals Morph.", winRate: 56.5 },
+    { hero: "omniknight", reason: "Repel protects Morph from disables. Guardian Angel lets Morph fight without fear.", winRate: 57.2 }
+  ],
+  doom: [
+    { hero: "earthshaker", reason: "Fissure sets up Doom's combo. Echo Slam destroys enemies grouped by Doom.", winRate: 56.2 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Doom's ultimate. Doom deletes locked enemies.", winRate: 56.9 }
+  ],
+  luna: [
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Luna's Eclipse. Luna deletes locked enemies.", winRate: 57.4 },
+    { hero: "dazzle", reason: "Shallow Grave protects Luna during Eclipse. Shadow Wave heals Luna.", winRate: 56.8 }
+  ],
+  sven: [
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Sven's God's Strength. Sven deletes locked enemies.", winRate: 57.6 },
+    { hero: "earthshaker", reason: "Fissure sets up Sven's combo. Echo Slam destroys enemies grouped by Sven.", winRate: 56.5 }
+  ],
+  earthshaker: [
+    { hero: "faceless_void", reason: "Echo Slam destroys enemies grouped in Chronosphere. Fissure sets up Chrono.", winRate: 58.1 },
+    { hero: "pudge", reason: "Pudge's Hook groups enemies for Echo Slam. Rot keeps enemies in Fissure range.", winRate: 56.1 },
+    { hero: "sniper", reason: "Sniper's damage groups enemies for Echo Slam. Assassinate finishes low HP targets.", winRate: 56.3 }
+  ],
+  crystal_maiden: [
+    { hero: "wraith_king", reason: "CM's mana regen solves WK's mana issues. Crystal Nova slows for WK's approach.", winRate: 57.5 },
+    { hero: "axe", reason: "Crystal Nova slows enemies for Axe's Call. Freezing Field combos with Axe's initiation.", winRate: 55.9 }
+  ],
+  dazzle: [
+    { hero: "slark", reason: "Shallow Grave protects Slark during dives. Shadow Wave heals Slark.", winRate: 56.2 },
+    { hero: "anti_mage", reason: "Shallow Grave protects AM during early fights. Shadow Wave heals AM.", winRate: 56.8 }
+  ],
+  lion: [
+    { hero: "earthshaker", reason: "Earth Spike sets up Fissure. Hex + Fissure combo locks enemies in place.", winRate: 56.4 },
+    { hero: "faceless_void", reason: "Hex + Earth Spike sets up Chronosphere. Lion deletes locked enemies.", winRate: 56.9 }
+  ],
+  rubick: [
+    { hero: "earthshaker", reason: "Telekinesis sets up Fissure. Spell Steal can steal Echo Slam.", winRate: 56.5 },
+    { hero: "faceless_void", reason: "Telekinesis sets up Chronosphere. Spell Steal can steal Chronosphere.", winRate: 56.8 }
+  ],
+  keeper_of_light: [
+    { hero: "anti_mage", reason: "Recall saves AM from bad fights. Illuminate sets up AM's Blink. Mana Oath protects AM.", winRate: 56.9 },
+    { hero: "earthshaker", reason: "Recall saves ES from bad fights. Illuminate sets up Fissure. Mana Oath protects ES.", winRate: 56.2 }
+  ],
+  omniknight: [
+    { hero: "slark", reason: "Repel protects Slark from disables. Guardian Angel lets Slark fight without fear.", winRate: 57.1 },
+    { hero: "anti_mage", reason: "Repel protects AM from disables. Purification heals AM. Guardian Angel lets AM fight.", winRate: 57.2 }
+  ],
+  witch_doctor: [
+    { hero: "axe", reason: "Cask bounces between enemies pulled in by Call. Death Ward destroys locked enemies.", winRate: 56.4 },
+    { hero: "earthshaker", reason: "Fissure sets up Death Ward. Echo Slam destroys enemies grouped by WD.", winRate: 56.1 }
+  ],
+  void_spirit: [
+    { hero: "earthshaker", reason: "Fissure sets up VS's combo. Echo Slam destroys enemies grouped by VS.", winRate: 56.4 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for VS's combo. VS deletes locked enemies.", winRate: 56.8 }
+  ],
+  kez: [
+    { hero: "earthshaker", reason: "Fissure sets up Kez's combo. Echo Slam destroys enemies grouped by Kez.", winRate: 56.2 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Kez's combo. Kez deletes locked enemies.", winRate: 56.5 }
+  ],
+  tiny: [
+    { hero: "earthshaker", reason: "Fissure sets up Tiny's combo. Echo Slam destroys enemies grouped by Tiny.", winRate: 56.1 },
+    { hero: "faceless_void", reason: "Chronosphere groups enemies for Tiny's combo. Tiny deletes locked enemies.", winRate: 56.4 }
+  ]
+};
+
+/* =========================================================
+   DRAFT SIMULATOR APP
+   ========================================================= */
+const App = {
+  state: {
+    pickingFor: "radiant",
+    radiant: [],
+    dire: [],
+    attrFilter: null
+  },
+
+  init() {
+    this.bindEvents();
+    this.renderAll();
+  },
+
+  bindEvents() {
+    document.querySelectorAll(".side-toggle-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".side-toggle-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.state.pickingFor = btn.dataset.side;
+        this.renderAll();
+      });
+    });
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const attr = btn.dataset.attr;
+        if (this.state.attrFilter === attr) {
+          this.state.attrFilter = null;
+          btn.classList.remove("active");
+        } else {
+          document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+          this.state.attrFilter = attr;
+          btn.classList.add("active");
+        }
+        this.renderHeroPool();
+      });
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      this.renderHeroPool(e.target.value);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (this.state.radiant.length === 0 && this.state.dire.length === 0) return;
+      if (confirm("Reset the entire draft?")) {
+        this.state.radiant = [];
+        this.state.dire = [];
+        this.renderAll();
+      }
+    });
+
+    document.getElementById("undoBtn").addEventListener("click", () => {
+      // Undo the most recent pick from either side
+      const rLast = this.state.radiant.length;
+      const dLast = this.state.dire.length;
+      if (rLast === 0 && dLast === 0) return;
+      // Remove from whichever side was picked last (simple: remove from pickingFor side, or the side with more picks)
+      if (rLast > 0 && (this.state.pickingFor === "radiant" || dLast === 0)) {
+        this.state.radiant.pop();
+      } else if (dLast > 0) {
+        this.state.dire.pop();
+      }
+      this.renderAll();
+    });
+
+    // Q&A
+    document.getElementById("qaSend").addEventListener("click", () => this.sendQuestion());
+    document.getElementById("qaInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") this.sendQuestion();
+    });
+    document.querySelectorAll(".quick-q").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.getElementById("qaInput").value = btn.dataset.q;
+        this.sendQuestion();
+      });
+    });
+  },
+
+  renderAll() {
+    this.renderSlots();
+    this.renderHeroPool();
+    this.updateTurnIndicator();
+    this.updateSuggestions();
+  },
+
+  getAllPicked() {
+    return [...this.state.radiant, ...this.state.dire];
+  },
+
+  isHeroAvailable(heroKey) {
+    return !this.getAllPicked().includes(heroKey);
+  },
+
+  updateTurnIndicator() {
+    const indicator = document.getElementById("turnIndicator");
+    const rCount = this.state.radiant.length;
+    const dCount = this.state.dire.length;
+    const total = rCount + dCount;
+
+    // Highlight active panel
+    document.getElementById("radiantPanel").classList.toggle("active-side", this.state.pickingFor === "radiant" && total < 10);
+    document.getElementById("direPanel").classList.toggle("active-side", this.state.pickingFor === "dire" && total < 10);
+
+    if (total >= 10) {
+      indicator.innerHTML = "✅ Draft Complete! Ask the Draft Analyst below 👇";
+      indicator.style.background = "var(--bg-dark)";
+      return;
+    }
+
+    const side = this.state.pickingFor;
+    const sideName = side === "radiant" ? "🟢 Radiant" : "🔴 Dire";
+    const sideCount = side === "radiant" ? rCount : dCount;
+    indicator.innerHTML = `Now picking for ${sideName} — Slot ${sideCount + 1}/5`;
+    indicator.style.background = side === "radiant" ? "var(--radiant-dark)" : "var(--dire-dark)";
+  },
+
+  renderSlots() {
+    ["radiant", "dire"].forEach(side => {
+      const container = document.getElementById(side + "Slots");
+      container.innerHTML = "";
+      for (let i = 0; i < 5; i++) {
+        const heroKey = this.state[side][i];
+        const slot = document.createElement("div");
+        slot.className = "draft-slot" + (heroKey ? " filled" : "");
+
+        const isActiveTarget = !heroKey &&
+                               this.state.pickingFor === side &&
+                               i === this.state[side].length &&
+                               (this.state.radiant.length + this.state.dire.length) < 10;
+        if (isActiveTarget) slot.classList.add("active-pick");
+
+        if (heroKey) {
+          const hero = HeroesDB[heroKey];
+          slot.innerHTML = `
+            <div class="slot-number">${i + 1}</div>
+            <div class="slot-content">
+              <img class="hero-icon" src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${hero.img}.png" alt="${hero.name}" onerror="this.style.display='none'">
+              <div class="hero-info">
+                <div class="hero-name">${hero.name}</div>
+                <div class="hero-attr">${hero.attr.toUpperCase()} • ${hero.roles.join(", ")}</div>
+              </div>
+            </div>
+            <button class="remove-btn" title="Remove">✕</button>
+          `;
+          slot.querySelector(".remove-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.state[side].splice(i, 1);
+            this.renderAll();
+          });
+        } else {
+          slot.innerHTML = `
+            <div class="slot-number">${i + 1}</div>
+            <div class="slot-content">
+              <div class="hero-icon placeholder">Empty</div>
+              <div class="hero-info">
+                <div class="hero-name" style="color: var(--text-dim)">${isActiveTarget ? "⬅ Pick for this side" : "Awaiting pick..."}</div>
+              </div>
+            </div>
+          `;
+        }
+        container.appendChild(slot);
+      }
+    });
+  },
+
+  renderHeroPool(searchTerm = "") {
+    const container = document.getElementById("heroPool");
+    container.innerHTML = "";
+    const search = searchTerm.toLowerCase();
+    let idx = 0;
+
+    Object.entries(HeroesDB).forEach(([key, hero]) => {
+      if (search && !hero.name.toLowerCase().includes(search)) return;
+      if (this.state.attrFilter && hero.attr !== this.state.attrFilter) return;
+
+      const available = this.isHeroAvailable(key);
+      const card = document.createElement("div");
+      card.className = "hero-card" + (available ? "" : " disabled");
+      card.style.animationDelay = (idx * 10) + "ms";
+      card.innerHTML = `
+        <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${hero.img}.png" alt="${hero.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 100%22><rect fill=%22%231e2531%22 width=%22200%22 height=%22100%22/><text x=%22100%22 y=%2255%22 fill=%22%238a94a6%22 text-anchor=%22middle%22 font-size=%2220%22>${hero.name.charAt(0)}</text></svg>'">
+        <div class="name">${hero.name}</div>
+        <div class="wr">${hero.winRate}% WR</div>
+      `;
+      if (available) {
+        card.addEventListener("click", () => this.pickHero(key));
+      }
+      container.appendChild(card);
+      idx++;
+    });
+  },
+
+  pickHero(heroKey) {
+    const side = this.state.pickingFor;
+    if (this.state[side].length >= 5) return;
+    this.state[side].push(heroKey);
+    this.renderAll();
+  },
+
+  /* ============ SUGGESTIONS ============
+     Counter panel: show heroes that counter the ENEMY team's picks
+     (i.e., if picking for Radiant, show counters to Dire's heroes)
+     Synergy panel: show heroes that synergize with ALLY team's picks
+     (i.e., if picking for Radiant, show synergies with Radiant's heroes)
+  */
+  updateSuggestions() {
+    const pickingFor = this.state.pickingFor;
+    const allySide = pickingFor;
+    const enemySide = pickingFor === "radiant" ? "dire" : "radiant";
+    const allyKeys = this.state[allySide];
+    const enemyKeys = this.state[enemySide];
+
+    const allyName = allySide === "radiant" ? "🟢 Radiant" : "🔴 Dire";
+    const enemyName = enemySide === "radiant" ? "🟢 Radiant" : "🔴 Dire";
+
+    // ---- COUNTERS ----
+    const counterSubtitle = document.getElementById("counterSubtitle");
+    const counterList = document.getElementById("counterList");
+
+    if (enemyKeys.length === 0) {
+      counterSubtitle.textContent = `Heroes that counter the enemy team's picks`;
+      counterList.innerHTML = `<div class="empty-state">Pick heroes for ${enemyName} to see counter suggestions</div>`;
+    } else {
+      counterSubtitle.textContent = `Heroes that counter ${enemyName}'s picks — pick one for ${allyName}`;
+      const counterSuggestions = [];
+      const seen = new Set();
+
+      // For each enemy hero, find heroes that counter them
+      enemyKeys.forEach(enemyHeroKey => {
+        const enemyHero = HeroesDB[enemyHeroKey];
+        // Look through CounterData: which heroes have enemyHeroKey in their counters list?
+        Object.entries(CounterData).forEach(([candidateKey, data]) => {
+          if (!this.isHeroAvailable(candidateKey)) return;
+          if (seen.has(candidateKey)) return;
+          if (data.counters) {
+            const match = data.counters.find(c => c.hero === enemyHeroKey);
+            if (match) {
+              seen.add(candidateKey);
+              counterSuggestions.push({
+                hero: candidateKey,
+                countersWhom: enemyHeroKey,
+                reason: match.reason,
+                winRate: match.winRate
+              });
+            }
+          }
+        });
+      });
+
+      counterSuggestions.sort((a, b) => b.winRate - a.winRate);
+      const topCounters = counterSuggestions.slice(0, 6);
+
+      if (topCounters.length === 0) {
+        counterList.innerHTML = `<div class="empty-state">No strong counter data for ${enemyName}'s roster in current patch</div>`;
+      } else {
+        counterList.innerHTML = "";
+        topCounters.forEach((sug, i) => {
+          const hero = HeroesDB[sug.hero];
+          const target = HeroesDB[sug.countersWhom];
+          const card = document.createElement("div");
+          card.className = "suggestion-card";
+          card.style.animationDelay = (i * 50) + "ms";
+          const wrClass = sug.winRate >= 55 ? "high" : sug.winRate < 50 ? "low" : "";
+          card.innerHTML = `
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${hero.img}.png" alt="${hero.name}" onerror="this.style.display='none'">
+            <div class="suggestion-info">
+              <div class="suggestion-name">${hero.name} <span class="counters-label">counters ${target.name}</span></div>
+              <div class="suggestion-reason">${sug.reason}</div>
+            </div>
+            <div class="win-rate-badge ${wrClass}">${sug.winRate}%</div>
+          `;
+          card.addEventListener("click", () => this.pickHero(sug.hero));
+          counterList.appendChild(card);
+        });
+      }
+    }
+
+    // ---- SYNERGIES ----
+    const synergySubtitle = document.getElementById("synergySubtitle");
+    const synergyList = document.getElementById("synergyList");
+
+    if (allyKeys.length === 0) {
+      synergySubtitle.textContent = `Heroes that combo well with your current picks`;
+      synergyList.innerHTML = `<div class="empty-state">Pick heroes for ${allyName} to see synergy suggestions</div>`;
+    } else {
+      synergySubtitle.textContent = `Heroes that combo well with ${allyName}'s picks`;
+      const synergySuggestions = [];
+      const seen = new Set();
+
+      allyKeys.forEach(allyHeroKey => {
+        const allyHero = HeroesDB[allyHeroKey];
+        const synData = SynergyData[allyHeroKey];
+        if (!synData) return;
+        synData.forEach(syn => {
+          if (!this.isHeroAvailable(syn.hero)) return;
+          if (seen.has(syn.hero)) return;
+          seen.add(syn.hero);
+          synergySuggestions.push({
+            hero: syn.hero,
+            synergizesWith: allyHeroKey,
+            reason: syn.reason,
+            winRate: syn.winRate
+          });
+        });
+      });
+
+      synergySuggestions.sort((a, b) => b.winRate - a.winRate);
+      const topSynergies = synergySuggestions.slice(0, 6);
+
+      if (topSynergies.length === 0) {
+        synergyList.innerHTML = `<div class="empty-state">No strong synergy data for ${allyName}'s roster in current patch</div>`;
+      } else {
+        synergyList.innerHTML = "";
+        topSynergies.forEach((sug, i) => {
+          const hero = HeroesDB[sug.hero];
+          const ally = HeroesDB[sug.synergizesWith];
+          const card = document.createElement("div");
+          card.className = "suggestion-card";
+          card.style.animationDelay = (i * 50) + "ms";
+          const wrClass = sug.winRate >= 55 ? "high" : sug.winRate < 50 ? "low" : "";
+          card.innerHTML = `
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${hero.img}.png" alt="${hero.name}" onerror="this.style.display='none'">
+            <div class="suggestion-info">
+              <div class="suggestion-name">${hero.name} <span class="synergy-label">synergy with ${ally.name}</span></div>
+              <div class="suggestion-reason">${sug.reason}</div>
+            </div>
+            <div class="win-rate-badge ${wrClass}">${sug.winRate}%</div>
+          `;
+          card.addEventListener("click", () => this.pickHero(sug.hero));
+          synergyList.appendChild(card);
+        });
+      }
+    }
+  },
+
+  /* ============ Q&A SYSTEM ============ */
+  addMessage(text, sender) {
+    const chat = document.getElementById("qaChat");
+    const msg = document.createElement("div");
+    msg.className = "qa-msg " + sender;
+    msg.innerHTML = `
+      <div class="qa-avatar">${sender === "user" ? "You" : "AI"}</div>
+      <div class="qa-bubble">${text}</div>
+    `;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+  },
+
+  sendQuestion() {
+    const input = document.getElementById("qaInput");
+    const q = input.value.trim();
+    if (!q) return;
+    this.addMessage(this.escapeHtml(q), "user");
+    input.value = "";
+
+    const total = this.state.radiant.length + this.state.dire.length;
+    if (total === 0) {
+      setTimeout(() => this.addMessage("The draft hasn't started yet! Pick some heroes first so I can analyze the matchup.", "bot"), 200);
+      return;
+    }
+
+    setTimeout(() => {
+      const response = this.analyzeDraft(q);
+      this.addMessage(response, "bot");
+    }, 350);
+  },
+
+  escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  },
+
+  heroRef(name) {
+    return `<span class="hero-ref">${name}</span>`;
+  },
+
+  analyzeDraft(question) {
+    const q = question.toLowerCase();
+    const radiant = this.state.radiant.map(k => HeroesDB[k]);
+    const dire = this.state.dire.map(k => HeroesDB[k]);
+    const radiantKeys = this.state.radiant;
+    const direKeys = this.state.dire;
+
+    const teamStats = (heroes, keys) => {
+      const avgWR = heroes.reduce((s, h) => s + h.winRate, 0) / heroes.length;
+      const timings = { early: 0, mid: 0, late: 0 };
+      heroes.forEach(h => timings[h.timing]++);
+      const roles = {};
+      heroes.forEach(h => h.roles.forEach(r => roles[r] = (roles[r] || 0) + 1));
+      const attrs = { str: 0, agi: 0, int: 0, uni: 0 };
+      heroes.forEach(h => attrs[h.attr]++);
+      const hasCarry = roles["Carry"] >= 1;
+      const hasInitiator = roles["Initiator"] >= 1;
+      const hasDisabler = roles["Disabler"] >= 1;
+      const hasHealer = roles["Healer"] >= 1;
+      return { avgWR, timings, roles, attrs, hasCarry, hasInitiator, hasDisabler, hasHealer, heroes, keys };
+    };
+
+    const rStats = radiant.length ? teamStats(radiant, radiantKeys) : null;
+    const dStats = dire.length ? teamStats(dire, direKeys) : null;
+
+    const findMatchups = () => {
+      const matchups = [];
+      radiantKeys.forEach(rk => {
+        direKeys.forEach(dk => {
+          const dkData = CounterData[dk];
+          if (dkData && dkData.counters) {
+            const m = dkData.counters.find(c => c.hero === rk);
+            if (m) matchups.push({ counter: dk, victim: rk, winRate: m.winRate, reason: m.reason, side: "dire" });
+          }
+          const rkData = CounterData[rk];
+          if (rkData && rkData.counters) {
+            const m = rkData.counters.find(c => c.hero === dk);
+            if (m) matchups.push({ counter: rk, victim: dk, winRate: m.winRate, reason: m.reason, side: "radiant" });
+          }
+        });
+      });
+      matchups.sort((a, b) => b.winRate - a.winRate);
+      return matchups;
+    };
+
+    if (q.match(/advantage|who.*(win|ahead|better|stronger)|favor|edge/)) {
+      if (!rStats || !dStats) return "Both teams need to be filled for a full analysis. Right now I only see data for " + (rStats ? "Radiant" : "Dire") + ".";
+      const rScore = rStats.avgWR * 0.4 + rStats.timings.mid * 3 + rStats.timings.late * 2;
+      const dScore = dStats.avgWR * 0.4 + dStats.timings.mid * 3 + dStats.timings.late * 2;
+      const matchups = findMatchups();
+      const rCounterPts = matchups.filter(m => m.side === "radiant").reduce((s, m) => s + m.winRate - 50, 0);
+      const dCounterPts = matchups.filter(m => m.side === "dire").reduce((s, m) => s + m.winRate - 50, 0);
+      const rTotal = rScore + rCounterPts;
+      const dTotal = dScore + dCounterPts;
+      const winner = rTotal > dTotal ? "Radiant" : "Dire";
+      const diff = Math.abs(rTotal - dTotal).toFixed(1);
+      return `Based on Patch 7.41d data, <strong>${winner}</strong> has a slight edge (margin: ${diff} pts).<br><br>` +
+        `🟢 <strong>Radiant</strong> avg win rate: ${rStats.avgWR.toFixed(1)}% — ${this.timingProfile(rStats.timings)}<br>` +
+        `🔴 <strong>Dire</strong> avg win rate: ${dStats.avgWR.toFixed(1)}% — ${this.timingProfile(dStats.timings)}<br><br>` +
+        `Key factor: ${matchups.length > 0 ? `there are ${matchups.length} notable counter-relationships between the rosters.` : "no hard counters exist between these rosters — execution will decide the game."}`;
+    }
+
+    if (q.match(/win condition|how.*win|game plan|strategy/)) {
+      const parts = [];
+      if (rStats) parts.push(this.describeWinCondition("Radiant", rStats));
+      if (dStats) parts.push(this.describeWinCondition("Dire", dStats));
+      return parts.join("<br><br>") || "Draft more heroes to analyze win conditions.";
+    }
+
+    if (q.match(/teamfight|team fight|fight|5v5/)) {
+      if (!rStats || !dStats) return "Need both teams filled to compare teamfight potential.";
+      const aoeHeroes = ["Earthshaker","Faceless Void","Witch Doctor","Shadow Fiend","Luna","Invoker"];
+      const saveHeroes = ["Dazzle","Omniknight"];
+      const rAoE = rStats.heroes.filter(h => aoeHeroes.includes(h.name)).length;
+      const dAoE = dStats.heroes.filter(h => aoeHeroes.includes(h.name)).length;
+      const rSave = rStats.heroes.filter(h => saveHeroes.includes(h.name)).length + (rStats.hasHealer ? 1 : 0);
+      const dSave = dStats.heroes.filter(h => saveHeroes.includes(h.name)).length + (dStats.hasHealer ? 1 : 0);
+      let verdict = "";
+      if (rAoE > dAoE) verdict = "Radiant has stronger AoE teamfight with " + rStats.heroes.filter(h => aoeHeroes.includes(h.name)).map(h => this.heroRef(h.name)).join(", ") + ".";
+      else if (dAoE > rAoE) verdict = "Dire has stronger AoE teamfight with " + dStats.heroes.filter(h => aoeHeroes.includes(h.name)).map(h => this.heroRef(h.name)).join(", ") + ".";
+      else verdict = "Both teams have comparable AoE teamfight potential.";
+      return `<strong>Teamfight analysis (Patch 7.41d):</strong><br><br>` +
+        `🟢 Radiant AoE threats: ${rAoE} | Save tools: ${rSave}<br>` +
+        `🔴 Dire AoE threats: ${dAoE} | Save tools: ${dSave}<br><br>` + verdict;
+    }
+
+    if (q.match(/late.?game|late game|40 min|50 min|carry.*late|scale/)) {
+      if (!rStats || !dStats) return "Need both teams filled to compare late-game potential.";
+      const rLate = rStats.heroes.filter(h => h.timing === "late" || h.roles.includes("Carry"));
+      const dLate = dStats.heroes.filter(h => h.timing === "late" || h.roles.includes("Carry"));
+      return `<strong>Late-game projection (40+ min):</strong><br><br>` +
+        `🟢 <strong>Radiant</strong> late-game cores: ${rLate.length > 0 ? rLate.map(h => this.heroRef(h.name)).join(", ") : "none — will fall off"}<br>` +
+        `🔴 <strong>Dire</strong> late-game cores: ${dLate.length > 0 ? dLate.map(h => this.heroRef(h.name)).join(", ") : "none — will fall off"}<br><br>` +
+        (rLate.length > dLate.length ? "Radiant is favored to out-scale if they survive to 40+ minutes." :
+         dLate.length > rLate.length ? "Dire is favored to out-scale if they survive to 40+ minutes." :
+         "Both teams have similar late-game scaling — mid-game timing will be decisive.");
+    }
+
+    if (q.match(/early.?game|early game|laning|lane|first 10/)) {
+      if (!rStats || !dStats) return "Need both teams filled to compare laning.";
+      const rEarly = rStats.heroes.filter(h => h.timing === "early");
+      const dEarly = dStats.heroes.filter(h => h.timing === "early");
+      return `<strong>Early-game / Laning (0-10 min):</strong><br><br>` +
+        `🟢 Radiant strong laners: ${rEarly.length > 0 ? rEarly.map(h => this.heroRef(h.name)).join(", ") : "no standout lane bullies"}<br>` +
+        `🔴 Dire strong laners: ${dEarly.length > 0 ? dEarly.map(h => this.heroRef(h.name)).join(", ") : "no standout lane bullies"}<br><br>` +
+        `Note: In Patch 7.41, Tier 1 neutral items drop at 0:00, so early jungle efficiency matters more than ever.`;
+    }
+
+    if (q.match(/mid.?game|mid game|20 min|timing|push|roshan/)) {
+      if (!rStats || !dStats) return "Need both teams filled.";
+      const rMid = rStats.heroes.filter(h => h.timing === "mid");
+      const dMid = dStats.heroes.filter(h => h.timing === "mid");
+      return `<strong>Mid-game timing window (15-25 min):</strong><br><br>` +
+        `🟢 Radiant mid-game power spikes: ${rMid.length > 0 ? rMid.map(h => this.heroRef(h.name)).join(", ") : "relies on late-game"}<br>` +
+        `🔴 Dire mid-game power spikes: ${dMid.length > 0 ? dMid.map(h => this.heroRef(h.name)).join(", ") : "relies on late-game"}<br><br>` +
+        `The team with more mid-game heroes should force fights around 20 minutes.`;
+    }
+
+    if (q.match(/matchup|key.*battle|vs|counter|who.*beats/)) {
+      const matchups = findMatchups();
+      if (matchups.length === 0) return "No strong counter-relationships detected between these rosters. The game will be decided by mechanics and execution.";
+      const top = matchups.slice(0, 4);
+      let response = `<strong>Key matchups to watch:</strong><br><br>`;
+      top.forEach(m => {
+        const counterName = HeroesDB[m.counter].name;
+        const victimName = HeroesDB[m.victim].name;
+        response += `• ${this.heroRef(counterName)} (${m.side === "radiant" ? "🟢" : "🔴"}) hard-counters ${this.heroRef(victimName)} at <strong>${m.winRate}%</strong> WR — ${m.reason}<br>`;
+      });
+      return response;
+    }
+
+    if (q.match(/mistake|bad pick|wrong|should.*pick|regret|fix/)) {
+      const parts = [];
+      [
+        { side: "Radiant", stats: rStats, keys: radiantKeys },
+        { side: "Dire", stats: dStats, keys: direKeys }
+      ].forEach(({ side, stats, keys }) => {
+        if (!stats) return;
+        const issues = [];
+        if (!stats.hasCarry) issues.push(`no reliable carry — team has no late-game insurance`);
+        if (!stats.hasInitiator) issues.push(`no clear initiator — may struggle to start fights`);
+        if (!stats.hasDisabler) issues.push(`no hard disable — enemy blink heroes will be hard to catch`);
+        if (stats.attrs.str >= 4) issues.push(`too strength-heavy — vulnerable to physical damage reduction`);
+        if (stats.attrs.agi >= 4) issues.push(`too agility-heavy — vulnerable to early aggression`);
+        if (stats.timings.late >= 3 && stats.timings.early === 0) issues.push(`all late-game — will get rolled before 20 min`);
+        const enemyKeys = side === "Radiant" ? direKeys : radiantKeys;
+        keys.forEach(k => {
+          enemyKeys.forEach(ek => {
+            const eData = CounterData[ek];
+            if (eData && eData.counters) {
+              const m = eData.counters.find(c => c.hero === k);
+              if (m && m.winRate >= 55) {
+                issues.push(`${this.heroRef(HeroesDB[k].name)} is hard-countered by ${this.heroRef(HeroesDB[ek].name)} (${m.winRate}% WR)`);
+              }
+            }
+          });
+        });
+        if (issues.length > 0) {
+          parts.push(`<strong>${side === "Radiant" ? "🟢" : "🔴"} ${side} concerns:</strong><br>• ` + issues.slice(0, 4).join("<br>• "));
+        }
+      });
+      return parts.length > 0 ? parts.join("<br><br>") : "Both drafts look solid — no glaring mistakes detected. Focus on execution and itemization.";
+    }
+
+    const heroMentioned = Object.values(HeroesDB).find(h => q.includes(h.name.toLowerCase()));
+    if (heroMentioned) {
+      const heroKey = Object.keys(HeroesDB).find(k => HeroesDB[k].name === heroMentioned.name);
+      const onRadiant = radiantKeys.includes(heroKey);
+      const onDire = direKeys.includes(heroKey);
+      const side = onRadiant ? "Radiant" : onDire ? "Dire" : null;
+      if (!side) return `${this.heroRef(heroMentioned.name)} wasn't picked by either team in this draft.`;
+      const enemyKeys = side === "Radiant" ? direKeys : radiantKeys;
+      const threats = [];
+      enemyKeys.forEach(ek => {
+        const eData = CounterData[ek];
+        if (eData && eData.counters) {
+          const m = eData.counters.find(c => c.hero === heroKey);
+          if (m) threats.push({ hero: HeroesDB[ek].name, wr: m.winRate, reason: m.reason });
+        }
+      });
+      let response = `<strong>${this.heroRef(heroMentioned.name)}</strong> was picked by ${side === "Radiant" ? "🟢 Radiant" : "🔴 Dire"}.<br>`;
+      response += `Base win rate: <strong>${heroMentioned.winRate}%</strong> • Timing: <strong>${heroMentioned.timing}-game</strong> • Roles: ${heroMentioned.roles.join(", ")}<br><br>`;
+      if (threats.length > 0) {
+        response += `<strong>Threats in this draft:</strong><br>`;
+        threats.forEach(t => {
+          response += `• ${this.heroRef(t.hero)} counters at ${t.wr}% — ${t.reason}<br>`;
+        });
+      } else {
+        response += `No hard counters in the enemy roster — this is a free pick to scale into the mid/late game.`;
+      }
+      return response;
+    }
+
+    if (q.match(/composition|comp|role|balance|draft.*good|draft.*bad/)) {
+      const parts = [];
+      if (rStats) parts.push(this.describeComp("Radiant", rStats));
+      if (dStats) parts.push(this.describeComp("Dire", dStats));
+      return parts.join("<br><br>") || "Pick heroes first.";
+    }
+
+    return this.generalSummary(rStats, dStats, findMatchups());
+  },
+
+  timingProfile(t) {
+    return `Early: ${t.early} | Mid: ${t.mid} | Late: ${t.late}`;
+  },
+
+  describeWinCondition(side, stats) {
+    const icon = side === "Radiant" ? "🟢" : "🔴";
+    let wc = "";
+    if (stats.timings.early >= 2) {
+      wc = `${icon} <strong>${side}</strong> should snowball early — win through lane dominance and early Roshan.`;
+    } else if (stats.timings.mid >= 3) {
+      wc = `${icon} <strong>${side}</strong> wins by hitting their 20-minute timing window — force fights around key item spikes.`;
+    } else if (stats.timings.late >= 2) {
+      wc = `${icon} <strong>${side}</strong> should stall and farm — win by out-scaling with ${stats.heroes.filter(h => h.timing === "late").map(h => this.heroRef(h.name)).join(", ")}.`;
+    } else {
+      wc = `${icon} <strong>${side}</strong> has a balanced timing spread — adapt to enemy movements and pick fights when ahead.`;
+    }
+    return wc;
+  },
+
+  describeComp(side, stats) {
+    const icon = side === "Radiant" ? "🟢" : "🔴";
+    const roleStr = Object.entries(stats.roles).map(([r, c]) => `${r}: ${c}`).join(" | ");
+    const attrStr = `STR ${stats.attrs.str} | AGI ${stats.attrs.agi} | INT ${stats.attrs.int} | UNI ${stats.attrs.uni}`;
+    return `${icon} <strong>${side}</strong><br>Roles: ${roleStr}<br>Attributes: ${attrStr}<br>Avg WR: ${stats.avgWR.toFixed(1)}%`;
+  },
+
+  generalSummary(rStats, dStats, matchups) {
+    const total = (rStats ? rStats.heroes.length : 0) + (dStats ? dStats.heroes.length : 0);
+    if (total < 3) return "The draft is still early. Try asking about specific heroes, or wait until both teams are filled for a full analysis.";
+    let response = `<strong>Draft snapshot:</strong> ${rStats ? rStats.heroes.length : 0} Radiant / ${dStats ? dStats.heroes.length : 0} Dire picked.<br><br>`;
+    if (matchups.length > 0) {
+      const top = matchups[0];
+      response += `Most important matchup: ${this.heroRef(HeroesDB[top.counter].name)} vs ${this.heroRef(HeroesDB[top.victim].name)} (${top.winRate}% WR).<br><br>`;
+    }
+    response += `Try asking: "Who wins teamfights?", "Win conditions?", "Key matchups", or "Any draft mistakes?"`;
+    return response;
+  }
+};
+
+App.init();
+</script>
+</body>
+</html>
+
