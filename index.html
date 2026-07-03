@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Dispatch</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/fraunces@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/fraunces@latest/latin-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/fraunces@latest/latin-600-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/fraunces@latest/latin-700-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/latin-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/latin-600-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/latin-700-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/ibm-plex-mono@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/ibm-plex-mono@latest/latin-500-normal.css">
+<style>
+  body { background-color: white; }
+  :root{
+    --ink:#1C2B33;
+    --ink-soft:#48585F;
+    --paper:#EEE9DE;
+    --paper-raised:#F7F4EC;
+    --line:#D8D0BF;
+    --done:#3F7859;
+    --done-bg:#E3ECE3;
+    --progress:#B9791E;
+    --progress-bg:#F3E7D2;
+    --blocked:#AF4A38;
+    --blocked-bg:#F2DED9;
+    --accent:#2C4A52;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .app{max-width:900px;width:100%;margin:0 auto;padding:32px 24px 80px;}
+  img, a{word-break:break-word;}
+
+  .login-overlay{
+    position:fixed;
+    inset:0;
+    background:var(--paper);
+    z-index:1000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .login-overlay.hidden{display:none;}
+  .login-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:40px 36px;
+    width:100%;
+    max-width:380px;
+    box-shadow:0 2px 12px rgba(28,43,51,.06);
+  }
+  .login-masthead{
+    text-align:center;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:24px;
+  }
+  .login-masthead-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:28px;
+    letter-spacing:-0.01em;
+    line-height:1;
+  }
+  .login-masthead-sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:8px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .login-card label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .login-card input{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 11px;
+    margin-bottom:14px;
+  }
+  .login-card input:focus{outline:none;border-color:var(--accent);}
+  .login-btn{
+    width:100%;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--paper-raised);
+    border:none;
+    border-radius:3px;
+    padding:12px 20px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .login-btn:hover{background:var(--accent);}
+  .login-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .login-error{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--blocked);
+    background:var(--blocked-bg);
+    border-radius:3px;
+    padding:8px 10px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .login-error.show{display:block;}
+  .login-success{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--done);
+    background:var(--done-bg);
+    border-radius:3px;
+    padding:8px 10px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .login-success.show{display:block;}
+  .login-switch{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--accent);
+    text-align:center;
+    margin-top:14px;
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .login-switch:hover{color:var(--ink);}
+  .auth-form.hidden{display:none;}
+  .login-loading{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:14px;
+  }
+
+  .masthead{
+    border-bottom:3px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .masthead-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:34px;
+    letter-spacing:-0.01em;
+    line-height:1;
+  }
+  .masthead-sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:6px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .masthead-right{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .masthead-user{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    letter-spacing:.06em;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .masthead-user .user-badge{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--ink);color:var(--paper-raised);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .logout-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    border-radius:3px;
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .logout-btn:hover{border-color:var(--blocked);color:var(--blocked);}
+
+  .tabs{display:flex;gap:2px;margin-bottom:28px;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:10px 18px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .tab.active{background:var(--ink);color:var(--paper-raised);border-color:var(--ink);}
+  .tab:first-child{border-radius:3px 0 0 3px;}
+  .tab:last-child{border-radius:0 3px 3px 0;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px;
+    margin-bottom:20px;
+  }
+  .row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .field{flex:1;min-width:160px;}
+  label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  select, input[type=text], input[type=date], textarea{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:9px 10px;
+  }
+  select:focus, input:focus, textarea:focus{outline:none;border-color:var(--accent);}
+  textarea{resize:vertical;min-height:64px;font-family:'Inter',sans-serif;line-height:1.5;}
+  select:disabled{
+    background:var(--paper);
+    color:var(--ink-soft);
+    cursor:not-allowed;
+  }
+  .locked-hint{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:4px;
+    font-style:italic;
+  }
+
+  .section-label{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:16px;
+    margin:26px 0 10px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-label .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.done{background:var(--done);}
+  .dot.progress{background:var(--progress);}
+  .dot.blocked{background:var(--blocked);}
+  .dot.next{background:var(--accent);}
+  .hint{font-size:12.5px;color:var(--ink-soft);margin:-4px 0 10px;line-height:1.5;}
+
+  .item-list{display:flex;flex-direction:column;gap:10px;margin-bottom:8px;}
+  .item-row{
+    display:flex;flex-direction:column;gap:6px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:9px;
+  }
+  .item-row-main{display:flex;gap:8px;align-items:flex-start;}
+  .item-row-main textarea{flex:1;min-height:44px;border:none;padding:2px 2px;}
+  .item-row-main textarea:focus{outline:none;}
+  .task-project{
+    width:200px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:6px 8px;
+  }
+  .task-project:focus{outline:none;border-color:var(--accent);color:var(--ink);}
+  .item-row .remove{
+    background:none;border:none;color:var(--ink-soft);cursor:pointer;
+    font-size:16px;padding:6px 8px;line-height:1;flex-shrink:0;
+  }
+  .item-row .remove:hover{color:var(--blocked);}
+  .add-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--accent);
+    background:none;
+    border:1px dashed var(--line);
+    border-radius:3px;
+    padding:7px 12px;
+    cursor:pointer;
+  }
+  .add-btn:hover{border-color:var(--accent);}
+
+  .obstacle-block{
+    background:var(--blocked-bg);
+    border:1px solid #E0C4BC;
+    border-radius:3px;
+    padding:12px;
+    margin-bottom:8px;
+  }
+  .obstacle-block .task-project{background:var(--white);margin-bottom:8px;display:block;width:200px;}
+  .obstacle-block .recurring{
+    display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .obstacle-block textarea{background:var(--white);}
+
+  .who-projects{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+  .project-chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    background:var(--paper);
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    border-radius:10px;
+    padding:2px 9px;
+  }
+  .item-tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    background:var(--paper);
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    border-radius:2px;
+    padding:1px 6px;
+    margin-right:6px;
+    vertical-align:middle;
+  }
+
+  .link-row{display:flex;gap:8px;margin-bottom:8px;}
+  .link-row input{flex:1;}
+
+  .submit-bar{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
+  .submit-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--paper-raised);
+    border:none;
+    border-radius:3px;
+    padding:12px 26px;
+    cursor:pointer;
+  }
+  .submit-btn:hover{background:var(--accent);}
+  .cancel-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:12px 20px;
+    cursor:pointer;
+  }
+  .cancel-btn:hover{border-color:var(--blocked);color:var(--blocked);}
+  .editing-flag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--progress);
+    background:var(--progress-bg);
+    border-radius:3px;
+    padding:8px 12px;
+    margin-top:10px;
+    text-align:right;
+  }
+  .status-msg{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--done);margin-top:10px;text-align:right;}
+
+  .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+  .filters select{width:auto;min-width:150px;}
+  .date-range{display:flex;align-items:center;gap:8px;}
+  .date-range input[type=date]{width:auto;min-width:140px;padding:8px 9px;}
+  .date-range-sep{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+  .filter-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .preset-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    border-radius:12px;
+    padding:5px 12px;
+    cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .preset-btn.active{background:var(--ink);color:var(--paper-raised);border-color:var(--ink);}
+  .backend-status{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:16px;
+  }
+  .backend-status.error{color:var(--blocked);}
+  .empty-state{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:60px 20px;
+    border:1px dashed var(--line);
+    border-radius:4px;
+  }
+
+  .day-group{margin-bottom:30px;}
+  .day-heading{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    border-bottom:1px solid var(--ink);
+    padding-bottom:8px;
+    margin-bottom:14px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .entry{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:4px solid var(--accent);
+    border-radius:3px;
+    padding:20px 22px;
+    margin-bottom:14px;
+  }
+  .entry-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .who{display:flex;align-items:center;gap:10px;}
+  .entry-actions{display:flex;gap:8px;}
+  .edit-entry-btn, .delete-entry-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    border-radius:3px;
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .edit-entry-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .delete-entry-btn:hover{border-color:var(--blocked);color:var(--blocked);}
+  .edited-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-left:8px;
+  }
+  .badge{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--ink);color:var(--paper-raised);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .who-name{font-weight:600;font-size:14.5px;}
+
+  .entry-section{margin-bottom:14px;}
+  .entry-section:last-child{margin-bottom:0;}
+  .entry-section h4{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .entry-section ul{margin:0;padding-left:18px;font-size:14px;line-height:1.6;}
+  .entry-section li{margin-bottom:3px;}
+
+  .obstacle-item{
+    background:var(--blocked-bg);
+    border-radius:3px;
+    padding:8px 10px;
+    font-size:13.5px;
+    margin-bottom:6px;
+    line-height:1.5;
+  }
+  .recurring-tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    background:var(--blocked);
+    color:var(--white);
+    padding:1px 6px;
+    border-radius:2px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+
+  .links-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .links-row a{
+    font-size:12.5px;
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--accent);
+    text-decoration:none;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:5px 10px;
+    background:var(--white);
+  }
+  .links-row a:hover{border-color:var(--accent);}
+
+  .conflict-banner{
+    background:var(--progress-bg);
+    border:1px solid #D9B878;
+    border-left:4px solid var(--progress);
+    border-radius:3px;
+    padding:12px 16px;
+    margin-bottom:16px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .conflict-banner strong{color:var(--progress);}
+
+  .spinner{
+    width:14px;height:14px;
+    border:2px solid currentColor;
+    border-right-color:transparent;
+    border-radius:50%;
+    display:inline-block;
+    animation:spin .65s linear infinite;
+    vertical-align:middle;
+    margin-right:7px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  button:disabled{opacity:.6;cursor:not-allowed;}
+
+  .init-loader{
+    position:fixed;
+    inset:0;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    z-index:999;
+    transition:opacity .35s ease;
+  }
+  .init-loader.hidden{
+    opacity:0;
+    pointer-events:none;
+  }
+  .init-spinner{
+    width:34px;height:34px;
+    border:3px solid var(--line);
+    border-top-color:var(--ink);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  .init-loader-text{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .init-loader-sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    opacity:.7;
+    max-width:280px;
+    text-align:center;
+  }
+
+  @media (max-width:900px){
+    .app{padding:26px 20px 70px;}
+    .card{padding:22px;}
+  }
+
+  @media (max-width:640px){
+    .app{padding:20px 16px 64px;}
+    .masthead{flex-direction:column;align-items:flex-start;gap:14px;padding-bottom:14px;}
+    .masthead-title{font-size:26px;}
+    .masthead-right{width:100%;justify-content:space-between;}
+
+    .tabs{width:100%;}
+    .tab{flex:1;text-align:center;padding:12px 10px;font-size:11px;}
+
+    .card{padding:18px 16px;border-radius:3px;}
+    .row{flex-direction:column;gap:12px;margin-bottom:14px;}
+    .field{min-width:0;}
+
+    select, input[type=text], input[type=date], textarea{font-size:16px;padding:10px 11px;}
+    .login-card input{font-size:16px;}
+
+    .section-label{font-size:15px;margin:20px 0 8px;padding-top:16px;}
+    .hint{font-size:12px;}
+
+    .item-row{align-items:stretch;}
+    .item-row .remove{padding:8px 10px;font-size:20px;}
+    .task-project{width:100%;}
+    .add-btn{width:100%;padding:10px 12px;text-align:center;}
+
+    .obstacle-block{padding:12px;}
+    .obstacle-block .task-project{width:100%;}
+    .obstacle-block .recurring{flex-wrap:wrap;}
+    .obstacle-block .recurring .remove{margin-left:0;width:100%;text-align:right;}
+
+    .link-row{flex-direction:column;gap:6px;}
+    .link-row .remove{align-self:flex-end;margin-top:-4px;}
+
+    .submit-bar{width:100%;}
+    .submit-btn{width:100%;padding:14px 20px;}
+    .status-msg{text-align:center;}
+
+    .filters{flex-direction:column;gap:10px;align-items:stretch;}
+    .filters select{width:100%;min-width:0;}
+    .date-range{width:100%;}
+    .date-range input[type=date]{flex:1;min-width:0;}
+    #refreshBtn{margin-left:0 !important;}
+    .filter-presets{width:100%;}
+    .preset-btn{flex:1;text-align:center;}
+
+    .entry{padding:16px;}
+    .entry-head{gap:10px;}
+    .who{width:100%;}
+    .entry-actions{width:100%;justify-content:flex-end;}
+    .edit-entry-btn, .delete-entry-btn{padding:8px 12px;}
+    .who-name{font-size:14px;}
+
+    .entry-section h4{font-size:10.5px;}
+    .entry-section ul{padding-left:16px;font-size:13.5px;}
+
+    .links-row a{font-size:12px;padding:6px 9px;flex:1 1 auto;text-align:center;}
+
+    .day-heading{font-size:11.5px;flex-direction:column;align-items:flex-start;gap:4px;}
+
+    .login-card{padding:32px 24px;}
+    .login-masthead-title{font-size:24px;}
+  }
+
+  @media (max-width:380px){
+    .masthead-title{font-size:22px;}
+    .badge{width:26px;height:26px;font-size:11px;}
+  }
+
+  @media (hover:none) and (pointer:coarse){
+    .add-btn, .submit-btn, .tab, select, input, textarea{min-height:40px;}
+    .item-row .remove, .link-row .remove{min-width:40px;min-height:40px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-masthead">
+      <div class="login-masthead-title">Daily Dispatch</div>
+      <div class="login-masthead-sub" id="loginMastheadSub">Team sign-in</div>
+    </div>
+
+    <form id="loginForm" class="auth-form" autocomplete="on">
+      <div class="login-error" id="loginError">Invalid username or password.</div>
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" name="username" autocomplete="username" placeholder="e.g. jmark" required>
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="••••••••" required>
+      <button type="submit" class="login-btn" id="loginBtn">Sign in</button>
+      <div class="login-switch" id="showCreateLink">Create a new account →</div>
+    </form>
+
+    <form id="createForm" class="auth-form hidden" autocomplete="on">
+      <div class="login-error" id="createError">Something went wrong.</div>
+      <div class="login-success" id="createSuccess">Account created — you can sign in now.</div>
+      <label for="createUser">Username</label>
+      <input type="text" id="createUser" name="new-username" autocomplete="username" placeholder="letters/numbers, e.g. thomas" required>
+      <label for="createPass">Password</label>
+      <input type="password" id="createPass" name="new-password" autocomplete="new-password" placeholder="choose a password" required minlength="4">
+      <button type="submit" class="login-btn" id="createBtn">Create account</button>
+      <div class="login-switch" id="showLoginLink">← Back to sign in</div>
+    </form>
+
+    <div class="login-loading" id="loginLoading" style="display:none;">
+      <span class="spinner"></span>Checking credentials…
+    </div>
+  </div>
+</div>
+
+<div class="init-loader hidden" id="initLoader">
+  <div class="init-spinner"></div>
+  <div class="init-loader-text">Loading Daily Dispatch…</div>
+  <div class="init-loader-sub" id="initLoaderSub"></div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+
+  <div class="masthead">
+    <div>
+      <div class="masthead-title">Daily Dispatch</div>
+      <div class="masthead-sub" id="dateStamp">—</div>
+    </div>
+    <div class="masthead-right">
+      <div class="masthead-user" id="mastheadUser">
+        <div class="user-badge" id="userBadge">—</div>
+        <span id="userName">—</span>
+      </div>
+      <button class="logout-btn" id="logoutBtn" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-view="submit">New Update</div>
+    <div class="tab" data-view="log">Progress Log</div>
+  </div>
+
+  <div class="view active" id="view-submit">
+    <div id="conflictBanner" class="conflict-banner" style="display:none;"></div>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>Submitted by</label>
+          <select id="teamMember" disabled></select>
+          <div class="locked-hint">Locked to your account. Sign out to switch users.</div>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="entryDate">
+        </div>
+      </div>
+      <datalist id="projectSuggestions"></datalist>
+      <div class="hint">Working on more than one project today? Tag each task below with its own project — no need to split this into separate updates.</div>
+
+      <div class="section-label"><span class="dot done"></span>Completed today</div>
+      <div class="hint">Work finished today — not necessarily the whole task or project, just what got done today.</div>
+      <div class="item-list" id="completedList"></div>
+      <button class="add-btn" onclick="addItem('completedList')">+ add item</button>
+
+      <div class="section-label"><span class="dot progress"></span>Ongoing / not yet finished</div>
+      <div class="hint">Tasks still in motion. If any of these were expected to be done today and aren't, add the reason below.</div>
+      <div class="item-list" id="ongoingList"></div>
+      <button class="add-btn" onclick="addItem('ongoingList')">+ add item</button>
+
+      <div class="section-label"><span class="dot blocked"></span>Obstacles / why it's not done</div>
+      <div class="hint">Only fill this in if something planned for today wasn't completed. Flag it if it's a repeat issue.</div>
+      <div class="item-list" id="obstacleList"></div>
+      <button class="add-btn" onclick="addObstacle()">+ add obstacle</button>
+
+      <div class="section-label"><span class="dot next"></span>Planned for tomorrow</div>
+      <div class="hint">What's next on the list for the next working day.</div>
+      <div class="item-list" id="plannedList"></div>
+      <button class="add-btn" onclick="addItem('plannedList')">+ add item</button>
+
+      <div class="section-label">Links</div>
+      <div class="hint">Drop links to decks, docs, dashboards, or live previews the client can check progress on.</div>
+      <div id="linksList"></div>
+      <button class="add-btn" onclick="addLink()">+ add link</button>
+
+      <div class="submit-bar">
+        <button class="cancel-btn" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel edit</button>
+        <button class="submit-btn" id="submitBtn" onclick="submitEntry()">Post update</button>
+      </div>
+      <div class="editing-flag" id="editingFlag" style="display:none;"></div>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-log">
+    <div class="filters">
+      <select id="filterMember">
+        <option value="">All team members</option>
+      </select>
+      <select id="filterProject">
+        <option value="">All projects</option>
+      </select>
+      <select id="filterStatus">
+        <option value="">All updates</option>
+        <option value="blocked">Has obstacles</option>
+        <option value="clean">No obstacles</option>
+      </select>
+      <div class="date-range">
+        <input type="date" id="filterDateFrom" aria-label="From date">
+        <span class="date-range-sep">to</span>
+        <input type="date" id="filterDateTo" aria-label="To date">
+      </div>
+      <button class="add-btn" id="refreshBtn" onclick="refreshLog()" style="margin-left:auto;">↻ Refresh</button>
+    </div>
+    <div class="filter-presets">
+      <button class="preset-btn" onclick="applyDatePreset('today', this)">Today</button>
+      <button class="preset-btn" onclick="applyDatePreset('week', this)">Last 7 days</button>
+      <button class="preset-btn" onclick="applyDatePreset('month', this)">Last 30 days</button>
+      <button class="preset-btn" onclick="applyDatePreset('all', this)">All time</button>
+    </div>
+    <div class="backend-status" id="backendStatus"></div>
+    <div id="logContainer"></div>
+  </div>
+
+</div>
+
+<script>
+const ACCOUNTS_KEY = 'dispatch-accounts';
+const STORAGE_KEY = 'dispatch-entries';
+const SESSION_KEY = 'dispatch-session';
+
+const DEFAULT_ACCOUNTS = {
+  'jmark':  { password: 'jmark2026',  member: 'JMARK',  display: 'Jmark',           initials: 'JM' },
+  'loue':   { password: 'loue2026',   member: 'LOUE',   display: 'Loue',            initials: 'LO' },
+  'earl':   { password: 'earl2026',   member: 'EARL',   display: 'Earl',            initials: 'EA' },
+  'thomas': { password: 'thomas2026', member: 'THOMAS', display: 'Thomas Ventura',  initials: 'TV' }
+};
+
+let ACCOUNTS = {};
+let entries = [];
+let editingId = null;
+let lastKnownSnapshot = null;
+let currentUser = null;
+
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyu4voCcXy2pshNqeYjTmX3uppjvXKzG0qrptzFSWa1R7nVEXFcYTJeb_IUv8W9vQnL/exec';
+
+async function kvGet(key){
+  if(!BACKEND_URL || BACKEND_URL.indexOf('PASTE_') === 0){
+    return null;
+  }
+  const res = await fetch(BACKEND_URL + '?key=' + encodeURIComponent(key));
+  if(!res.ok) throw new Error('Backend GET failed: ' + res.status);
+  const json = await res.json();
+  return json && json.value ? json.value : null;
+}
+
+async function kvSet(key, value){
+  if(!BACKEND_URL || BACKEND_URL.indexOf('PASTE_') === 0){
+    return false;
+  }
+  const res = await fetch(BACKEND_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key, value })
+  });
+  if(!res.ok) throw new Error('Backend POST failed: ' + res.status);
+  const json = await res.json();
+  return !!(json && json.success);
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+}
+
+function initialsFor(member){
+  if(ACCOUNTS){
+    const acc = Object.values(ACCOUNTS).find(a => a.member === member);
+    if(acc && acc.initials) return acc.initials;
+  }
+  return member.slice(0,2).toUpperCase();
+}
+function properName(member){
+  if(ACCOUNTS){
+    const acc = Object.values(ACCOUNTS).find(a => a.member === member);
+    if(acc && acc.display) return acc.display;
+  }
+  return member.charAt(0) + member.slice(1).toLowerCase();
+}
+
+async function loadAccounts(){
+  try{
+    const value = await kvGet(ACCOUNTS_KEY);
+    if(value){
+      ACCOUNTS = JSON.parse(value);
+    } else {
+      ACCOUNTS = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+      await kvSet(ACCOUNTS_KEY, JSON.stringify(ACCOUNTS));
+    }
+  }catch(e){
+    console.error('load accounts failed', e);
+    ACCOUNTS = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+  }
+}
+
+async function createAccountOnBackend(username, password){
+  const freshValue = await kvGet(ACCOUNTS_KEY);
+  const fresh = freshValue ? JSON.parse(freshValue) : {};
+
+  if(fresh[username]){
+    throw new Error('That username is already taken.');
+  }
+
+  const member = username.toUpperCase();
+  const display = username
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  const initials = display
+    .split(/\s+/)
+    .map(w => w.charAt(0).toUpperCase())
+    .join('')
+    .slice(0,2);
+
+  fresh[username] = {
+    password: password,
+    member: member,
+    display: display,
+    initials: initials || member.slice(0,2).toUpperCase()
+  };
+
+  const ok = await kvSet(ACCOUNTS_KEY, JSON.stringify(fresh));
+  if(!ok) throw new Error('Could not save the new account — please try again.');
+
+  ACCOUNTS = fresh;
+  return fresh[username];
+}
+
+function getSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    const session = JSON.parse(raw);
+    if(!session || !session.username) return null;
+    if(!ACCOUNTS[session.username]) return null;
+    return session;
+  }catch(e){ return null; }
+}
+
+function setSession(user){
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    username: user.username,
+    member: user.member,
+    display: user.display,
+    initials: user.initials,
+    loggedInAt: new Date().toISOString()
+  }));
+}
+
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function showLogin(errorMsg){
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('mainApp').style.display = 'none';
+  const errEl = document.getElementById('loginError');
+  if(errorMsg){
+    errEl.textContent = errorMsg;
+    errEl.classList.add('show');
+  } else {
+    errEl.classList.remove('show');
+  }
+}
+
+function hideLogin(){
+  document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+function showLoginForm(){
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('createForm').classList.add('hidden');
+  document.getElementById('loginMastheadSub').textContent = 'Team sign-in';
+  document.getElementById('loginError').classList.remove('show');
+}
+
+function showCreateForm(){
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('createForm').classList.remove('hidden');
+  document.getElementById('loginMastheadSub').textContent = 'Create account';
+  document.getElementById('createError').classList.remove('show');
+  document.getElementById('createSuccess').classList.remove('show');
+}
+
+function applyUserToUI(user){
+  currentUser = user;
+  document.getElementById('userBadge').textContent = user.initials;
+  document.getElementById('userName').textContent = user.display;
+
+  const sel = document.getElementById('teamMember');
+  sel.innerHTML = '';
+  const seen = new Set();
+  Object.values(ACCOUNTS).forEach(acc => {
+    if(seen.has(acc.member)) return;
+    seen.add(acc.member);
+    const opt = document.createElement('option');
+    opt.value = acc.member;
+    opt.textContent = acc.display;
+    sel.appendChild(opt);
+  });
+  sel.value = user.member;
+  sel.disabled = true;
+
+  const filterSel = document.getElementById('filterMember');
+  const currentFilter = filterSel.value;
+  filterSel.innerHTML = '<option value="">All team members</option>';
+  const seenFilter = new Set();
+  Object.values(ACCOUNTS).forEach(acc => {
+    if(seenFilter.has(acc.member)) return;
+    seenFilter.add(acc.member);
+    const opt = document.createElement('option');
+    opt.value = acc.member;
+    opt.textContent = acc.display;
+    filterSel.appendChild(opt);
+  });
+  filterSel.value = currentFilter;
+}
+
+function attemptLogin(username, password){
+  const uname = (username || '').trim().toLowerCase();
+  const account = ACCOUNTS[uname];
+  if(!account || account.password !== password){
+    return null;
+  }
+  return {
+    username: uname,
+    member: account.member,
+    display: account.display,
+    initials: account.initials
+  };
+}
+
+// FIXED: No confirm() dialog — blocked in Google Sites iframes
+function logout(){
+  clearSession();
+  currentUser = null;
+  editingId = null;
+  entries = [];
+
+  ['completedList','ongoingList','obstacleList','plannedList','linksList'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '';
+  });
+
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  const createUser = document.getElementById('createUser');
+  const createPass = document.getElementById('createPass');
+
+  if(loginUser) loginUser.value = '';
+  if(loginPass) loginPass.value = '';
+  if(createUser) createUser.value = '';
+  if(createPass) createPass.value = '';
+
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('createError').classList.remove('show');
+  document.getElementById('createSuccess').classList.remove('show');
+
+  showLoginForm();
+  showLogin();
+  document.getElementById('mainApp').style.display = 'none';
+
+  // Reset the form fields for a fresh login
+  addItem('completedList');
+  addItem('ongoingList');
+  addItem('plannedList');
+  addLink();
+  document.getElementById('entryDate').value = todayStr();
+  document.getElementById('statusMsg').textContent = '';
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const uname = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  const loading = document.getElementById('loginLoading');
+  loading.style.display = 'block';
+
+  try{
+    await loadAccounts();
+  }catch(err){}
+
+  const user = attemptLogin(uname, pass);
+  loading.style.display = 'none';
+
+  if(!user){
+    showLogin('Invalid username or password. Check with your team lead.');
+    return;
+  }
+  setSession(user);
+  hideLogin();
+  applyUserToUI(user);
+  document.getElementById('mainApp').style.display = 'block';
+  bootApp();
+});
+
+document.getElementById('createForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const uname = document.getElementById('createUser').value.trim().toLowerCase();
+  const pass = document.getElementById('createPass').value;
+  const errEl = document.getElementById('createError');
+  const successEl = document.getElementById('createSuccess');
+  const btn = document.getElementById('createBtn');
+
+  errEl.classList.remove('show');
+  successEl.classList.remove('show');
+
+  if(!/^[a-z0-9._-]+$/.test(uname)){
+    errEl.textContent = 'Username can only contain letters, numbers, dots, dashes or underscores.';
+    errEl.classList.add('show');
+    return;
+  }
+  if(uname.length < 3){
+    errEl.textContent = 'Username must be at least 3 characters.';
+    errEl.classList.add('show');
+    return;
+  }
+  if(pass.length < 4){
+    errEl.textContent = 'Password must be at least 4 characters.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Creating…';
+
+  try{
+    await createAccountOnBackend(uname, pass);
+    successEl.textContent = 'Account "' + uname + '" created — you can sign in now.';
+    successEl.classList.add('show');
+    document.getElementById('createPass').value = '';
+    document.getElementById('loginUser').value = uname;
+    document.getElementById('loginPass').value = '';
+    setTimeout(() => {
+      showLoginForm();
+      document.getElementById('loginPass').focus();
+    }, 1400);
+  }catch(err){
+    errEl.textContent = err.message || 'Could not create the account — please try again.';
+    errEl.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Create account';
+});
+
+document.getElementById('showCreateLink').addEventListener('click', showCreateForm);
+document.getElementById('showLoginLink').addEventListener('click', showLoginForm);
+
+document.getElementById('entryDate').value = todayStr();
+document.getElementById('dateStamp').textContent = fmtDate(todayStr());
+
+function addItem(listId, value='', project=''){
+  const list = document.getElementById(listId);
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.innerHTML = `
+    <div class="item-row-main">
+      <textarea placeholder="Describe the task...">${value}</textarea>
+      <button class="remove" onclick="this.closest('.item-row').remove()">×</button>
+    </div>
+    <input type="text" class="task-project" list="projectSuggestions" placeholder="Project (optional)" value="${project}">`;
+  list.appendChild(row);
+}
+function addObstacle(taskVal='', reasonVal='', recurring=false, projectVal=''){
+  const list = document.getElementById('obstacleList');
+  const block = document.createElement('div');
+  block.className = 'obstacle-block';
+  block.innerHTML = `
+    <input type="text" class="task-project" list="projectSuggestions" placeholder="Project (optional)" value="${projectVal}">
+    <textarea class="obstacle-task" placeholder="Which task is this about?">${taskVal}</textarea>
+    <textarea class="obstacle-reason" placeholder="What's the obstacle / why it's not done today?" style="margin-top:8px;">${reasonVal}</textarea>
+    <div class="recurring">
+      <input type="checkbox" class="obstacle-recurring" ${recurring ? 'checked' : ''}> This is a recurring issue
+      <button class="remove" style="margin-left:auto;" onclick="this.closest('.obstacle-block').remove()">× remove</button>
+    </div>`;
+  list.appendChild(block);
+}
+function addLink(labelVal='', urlVal=''){
+  const list = document.getElementById('linksList');
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `<input type="text" class="link-label" placeholder="Label (e.g. Draft deck)" value="${labelVal}">
+    <input type="text" class="link-url" placeholder="https://..." value="${urlVal}">
+    <button class="remove" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(row);
+}
+addItem('completedList');
+addItem('ongoingList');
+addItem('plannedList');
+addLink();
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', async () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    if(tab.dataset.view === 'log') await refreshLog();
+  });
+});
+
+async function refreshLog(){
+  const statusEl = document.getElementById('backendStatus');
+  const btn = document.getElementById('refreshBtn');
+  statusEl.classList.remove('error');
+  statusEl.innerHTML = '<span class="spinner"></span>Loading latest updates…';
+  btn.disabled = true;
+  const originalBtnText = btn.textContent;
+  btn.textContent = 'Refreshing…';
+  try{
+    await loadEntries();
+    statusEl.textContent = 'Up to date · last checked ' + new Date().toLocaleTimeString();
+  }catch(e){
+    statusEl.classList.add('error');
+    statusEl.textContent = 'Could not reach the update log. Check your connection and try Refresh again.';
+  }
+  btn.disabled = false;
+  btn.textContent = originalBtnText;
+  renderLog();
+}
+
+async function loadEntries(){
+  try{
+    const value = await kvGet(STORAGE_KEY);
+    entries = value ? JSON.parse(value) : [];
+    lastKnownSnapshot = JSON.stringify(entries);
+  }catch(e){
+    console.error('load entries failed', e);
+    entries = [];
+    lastKnownSnapshot = '[]';
+  }
+}
+
+async function saveEntries(){
+  try{
+    const ok = await kvSet(STORAGE_KEY, JSON.stringify(entries));
+    if(!ok) console.error('Storage save returned falsy result');
+    lastKnownSnapshot = JSON.stringify(entries);
+  }catch(e){
+    console.error('Storage save failed', e);
+    throw e;
+  }
+}
+
+async function fetchLatestAndMerge(mode, localEntry){
+  const freshValue = await kvGet(STORAGE_KEY);
+  const fresh = freshValue ? JSON.parse(freshValue) : [];
+
+  if(mode === 'append'){
+    if(localEntry && localEntry.id && fresh.some(e => e.id === localEntry.id)){
+      return fresh;
+    }
+    return localEntry ? [...fresh, localEntry] : fresh;
+  }
+
+  if(mode === 'replace'){
+    const idx = fresh.findIndex(e => e.id === localEntry.id);
+    if(idx === -1){
+      return { merged: fresh, conflict: 'deleted' };
+    }
+    fresh[idx] = localEntry;
+    return { merged: fresh, conflict: null };
+  }
+
+  if(mode === 'remove'){
+    const idx = fresh.findIndex(e => e.id === localEntry);
+    if(idx === -1){
+      return { merged: fresh, conflict: 'already-deleted' };
+    }
+    fresh.splice(idx, 1);
+    return { merged: fresh, conflict: null };
+  }
+
+  return fresh;
+}
+
+function collectList(listId){
+  return Array.from(document.querySelectorAll('#' + listId + ' .item-row'))
+    .map(row => ({
+      text: row.querySelector('textarea').value.trim(),
+      project: row.querySelector('.task-project').value.trim()
+    }))
+    .filter(item => item.text);
+}
+function collectObstacles(){
+  return Array.from(document.querySelectorAll('#obstacleList .obstacle-block')).map(block => ({
+    task: block.querySelector('.obstacle-task').value.trim(),
+    reason: block.querySelector('.obstacle-reason').value.trim(),
+    recurring: block.querySelector('.obstacle-recurring').checked,
+    project: block.querySelector('.task-project').value.trim()
+  })).filter(o => o.task || o.reason);
+}
+function collectLinks(){
+  return Array.from(document.querySelectorAll('#linksList .link-row')).map(row => ({
+    label: row.querySelector('.link-label').value.trim(),
+    url: row.querySelector('.link-url').value.trim()
+  })).filter(l => l.label || l.url);
+}
+
+function itemText(item){ return typeof item === 'string' ? item : (item.text || ''); }
+function itemProject(item){ return typeof item === 'string' ? '' : (item.project || ''); }
+
+function populateItemList(listId, items){
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  if(items && items.length){
+    items.forEach(item => addItem(listId, escapeForField(itemText(item)), escapeForField(itemProject(item))));
+  } else {
+    addItem(listId);
+  }
+}
+function populateObstacles(obstacles){
+  const list = document.getElementById('obstacleList');
+  list.innerHTML = '';
+  (obstacles || []).forEach(o => addObstacle(escapeForField(o.task), escapeForField(o.reason), o.recurring, escapeForField(o.project)));
+}
+function populateLinks(links){
+  const list = document.getElementById('linksList');
+  list.innerHTML = '';
+  if(links && links.length){
+    links.forEach(l => addLink(escapeForField(l.label), escapeForField(l.url)));
+  } else {
+    addLink();
+  }
+}
+function escapeForField(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function editEntry(id){
+  const entry = entries.find(e => e.id === id);
+  if(!entry) return;
+
+  if(currentUser && entry.member !== currentUser.member){
+    alert('You can only edit your own updates. This one was posted by ' + properName(entry.member) + '.');
+    return;
+  }
+
+  editingId = id;
+  document.getElementById('teamMember').value = entry.member;
+  document.getElementById('entryDate').value = entry.date;
+
+  populateItemList('completedList', entry.completed);
+  populateItemList('ongoingList', entry.ongoing);
+  populateObstacles(entry.obstacles);
+  populateItemList('plannedList', entry.planned);
+  populateLinks(entry.links);
+
+  document.getElementById('submitBtn').textContent = 'Save changes';
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  const flag = document.getElementById('editingFlag');
+  flag.style.display = 'block';
+  flag.textContent = `Editing your update from ${fmtDate(entry.date)} — changes save to this entry, not a new one.`;
+
+  document.getElementById('conflictBanner').style.display = 'none';
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelector('.tab[data-view="submit"]').classList.add('active');
+  document.getElementById('view-submit').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteEntry(id, btn){
+  const entry = entries.find(e => e.id === id);
+  if(!entry) return;
+
+  if(currentUser && entry.member !== currentUser.member){
+    alert('You can only delete your own updates. This one was posted by ' + properName(entry.member) + '.');
+    return;
+  }
+
+  const ok = confirm(`Delete your update from ${fmtDate(entry.date)}? This can't be undone.`);
+  if(!ok) return;
+
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Deleting…';
+  }
+
+  try{
+    const result = await fetchLatestAndMerge('remove', id);
+    const merged = result.merged || result;
+    entries = merged;
+    await saveEntries();
+  }catch(e){
+    console.error('delete failed', e);
+    alert('Could not delete this update — please try again.');
+    if(btn){ btn.disabled = false; btn.textContent = 'Delete'; }
+    return;
+  }
+
+  if(editingId === id) cancelEdit();
+  renderLog();
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById('submitBtn').textContent = 'Post update';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('editingFlag').style.display = 'none';
+  document.getElementById('editingFlag').textContent = '';
+  document.getElementById('conflictBanner').style.display = 'none';
+
+  ['completedList','ongoingList','obstacleList','plannedList','linksList'].forEach(id => document.getElementById(id).innerHTML = '');
+  addItem('completedList');
+  addItem('ongoingList');
+  addItem('plannedList');
+  addLink();
+  document.getElementById('entryDate').value = todayStr();
+  document.getElementById('statusMsg').textContent = '';
+  if(currentUser){
+    document.getElementById('teamMember').value = currentUser.member;
+  }
+}
+
+let isSubmitting = false;
+
+async function submitEntry(){
+  if(isSubmitting) return;
+  if(!currentUser){
+    alert('Please sign in first.');
+    return;
+  }
+
+  const payload = {
+    date: document.getElementById('entryDate').value || todayStr(),
+    member: currentUser.member,
+    completed: collectList('completedList'),
+    ongoing: collectList('ongoingList'),
+    obstacles: collectObstacles(),
+    planned: collectList('plannedList'),
+    links: collectLinks()
+  };
+
+  if(!payload.completed.length && !payload.ongoing.length && !payload.planned.length){
+    document.getElementById('statusMsg').style.color = 'var(--blocked)';
+    document.getElementById('statusMsg').textContent = 'Add at least one item before posting.';
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  const wasEditing = !!editingId;
+  const currentEditingId = editingId;
+  isSubmitting = true;
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>' + (wasEditing ? 'Saving…' : 'Posting…');
+  document.getElementById('statusMsg').style.color = 'var(--ink-soft)';
+  document.getElementById('statusMsg').textContent = 'Saving to the shared log — this can take a few seconds.';
+
+  try{
+    if(wasEditing){
+      const existing = entries.find(e => e.id === currentEditingId);
+      if(existing && existing.member !== currentUser.member){
+        throw new Error('You can only edit your own updates.');
+      }
+      const updatedEntry = existing
+        ? { ...existing, ...payload, editedAt: new Date().toISOString() }
+        : { id: currentEditingId, postedAt: new Date().toISOString(), ...payload, editedAt: new Date().toISOString() };
+
+      const result = await fetchLatestAndMerge('replace', updatedEntry);
+      const merged = result.merged || result;
+
+      if(result.conflict === 'deleted'){
+        entries = merged;
+        await saveEntries();
+
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+        isSubmitting = false;
+
+        const banner = document.getElementById('conflictBanner');
+        banner.style.display = 'block';
+        banner.innerHTML = '<strong>This update was deleted</strong> while you were editing it, so your changes couldn\'t be saved. Your work is still in the form — copy anything you want to keep, then post it as a new update.';
+
+        document.getElementById('statusMsg').style.color = 'var(--blocked)';
+        document.getElementById('statusMsg').textContent = 'Save aborted — the original update no longer exists.';
+        return;
+      }
+
+      entries = merged;
+      await saveEntries();
+
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      isSubmitting = false;
+
+      document.getElementById('statusMsg').style.color = 'var(--done)';
+      document.getElementById('statusMsg').textContent = 'Changes saved to the existing update.';
+      setTimeout(() => document.getElementById('statusMsg').textContent = '', 3000);
+      cancelEdit();
+      return;
+    }
+
+    const newEntry = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      postedAt: new Date().toISOString(),
+      ...payload
+    };
+
+    const merged = await fetchLatestAndMerge('append', newEntry);
+    entries = merged;
+    await saveEntries();
+
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    isSubmitting = false;
+
+    document.getElementById('statusMsg').style.color = 'var(--done)';
+    document.getElementById('statusMsg').textContent = 'Update posted — visible in the Progress Log.';
+    setTimeout(() => document.getElementById('statusMsg').textContent = '', 3000);
+
+    ['completedList','ongoingList','obstacleList','plannedList','linksList'].forEach(id => document.getElementById(id).innerHTML = '');
+    addItem('completedList');
+    addItem('ongoingList');
+    addItem('plannedList');
+    addLink();
+    document.getElementById('entryDate').value = todayStr();
+
+  }catch(e){
+    console.error('submit failed', e);
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    isSubmitting = false;
+
+    document.getElementById('statusMsg').style.color = 'var(--blocked)';
+    document.getElementById('statusMsg').textContent = e.message || 'Could not save this update — please try again. Your work is still in the form.';
+  }
+}
+
+function entryProjects(e){
+  const all = [
+    ...(e.completed || []),
+    ...(e.ongoing || []),
+    ...(e.planned || []),
+    ...(e.obstacles || [])
+  ];
+  return Array.from(new Set(all.map(itemProject).filter(Boolean)));
+}
+
+function updateProjectOptions(){
+  const allProjects = new Set();
+  entries.forEach(e => entryProjects(e).forEach(p => allProjects.add(p)));
+  const projects = Array.from(allProjects).sort((a,b) => a.localeCompare(b));
+
+  const datalist = document.getElementById('projectSuggestions');
+  datalist.innerHTML = projects.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+
+  const filterSelect = document.getElementById('filterProject');
+  const current = filterSelect.value;
+  filterSelect.innerHTML = '<option value="">All projects</option>' + projects.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if(projects.includes(current)) filterSelect.value = current;
+}
+
+function renderLog(){
+  updateProjectOptions();
+  const container = document.getElementById('logContainer');
+  const memberFilter = document.getElementById('filterMember').value;
+  const projectFilter = document.getElementById('filterProject').value;
+  const statusFilter = document.getElementById('filterStatus').value;
+  const dateFrom = document.getElementById('filterDateFrom').value;
+  const dateTo = document.getElementById('filterDateTo').value;
+
+  let filtered = entries.filter(e => {
+    if(memberFilter && e.member !== memberFilter) return false;
+    if(projectFilter && !entryProjects(e).includes(projectFilter)) return false;
+    if(statusFilter === 'blocked' && !(e.obstacles && e.obstacles.length)) return false;
+    if(statusFilter === 'clean' && (e.obstacles && e.obstacles.length)) return false;
+    if(dateFrom && e.date < dateFrom) return false;
+    if(dateTo && e.date > dateTo) return false;
+    return true;
+  });
+
+  if(!filtered.length){
+    const activeFilters = [];
+    if(memberFilter) activeFilters.push('Team member: ' + properName(memberFilter));
+    if(projectFilter) activeFilters.push('Project: ' + projectFilter);
+    if(statusFilter === 'blocked') activeFilters.push('Status: Has obstacles');
+    if(statusFilter === 'clean') activeFilters.push('Status: No obstacles');
+    if(dateFrom || dateTo) activeFilters.push('Date: ' + (dateFrom ? fmtDate(dateFrom) : 'earliest') + ' – ' + (dateTo ? fmtDate(dateTo) : 'latest'));
+
+    if(!entries.length){
+      container.innerHTML = '<div class="empty-state">No updates yet. Post one from the New Update tab.</div>';
+    } else if(activeFilters.length){
+      container.innerHTML = `<div class="empty-state">No updates match the current filters — <strong>${activeFilters.join(' · ')}</strong>.<br><button class="add-btn" style="margin-top:12px;" onclick="clearLogFilters()">Clear filters</button></div>`;
+    } else {
+      container.innerHTML = '<div class="empty-state">No updates match. Try Refresh in case a teammate just posted one.</div>';
+    }
+    return;
+  }
+
+  filtered.sort((a,b) => b.date.localeCompare(a.date) || b.postedAt.localeCompare(a.postedAt));
+  const byDate = {};
+  filtered.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+
+  container.innerHTML = Object.keys(byDate).sort().reverse().map(date => {
+    const dayEntries = byDate[date];
+    return `<div class="day-group">
+      <div class="day-heading"><span>${fmtDate(date)}</span><span>${dayEntries.length} update${dayEntries.length>1?'s':''}</span></div>
+      ${dayEntries.map(e => renderEntry(e, projectFilter)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function clearLogFilters(){
+  document.getElementById('filterMember').value = '';
+  document.getElementById('filterProject').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterDateFrom').value = '';
+  document.getElementById('filterDateTo').value = '';
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  renderLog();
+}
+
+function applyDatePreset(preset, btnEl){
+  const from = document.getElementById('filterDateFrom');
+  const to = document.getElementById('filterDateTo');
+  const today = new Date();
+
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+
+  if(preset === 'today'){
+    from.value = todayStr();
+    to.value = todayStr();
+  } else if(preset === 'week'){
+    const start = new Date(today);
+    start.setDate(start.getDate() - 6);
+    from.value = start.toISOString().slice(0,10);
+    to.value = todayStr();
+  } else if(preset === 'month'){
+    const start = new Date(today);
+    start.setDate(start.getDate() - 29);
+    from.value = start.toISOString().slice(0,10);
+    to.value = todayStr();
+  } else {
+    from.value = '';
+    to.value = '';
+  }
+  refreshLog();
+}
+
+function renderEntry(e, projectFilter){
+  const projectTag = (p) => p ? `<span class="item-tag">${escapeHtml(p)}</span>` : '';
+
+  const obstaclesForDisplay = (e.obstacles || []).filter(o => !projectFilter || itemProject(o) === projectFilter);
+  const obstaclesHtml = obstaclesForDisplay.length ? `
+    <div class="entry-section">
+      <h4><span class="dot blocked" style="width:7px;height:7px;display:inline-block;border-radius:50%;"></span>Obstacles</h4>
+      ${obstaclesForDisplay.map(o => `<div class="obstacle-item">${projectTag(o.project)}<strong>${escapeHtml(o.task || 'Task')}:</strong> ${escapeHtml(o.reason)}${o.recurring ? '<span class="recurring-tag">Recurring</span>' : ''}</div>`).join('')}
+    </div>` : '';
+
+  const listSection = (title, dotClass, items) => {
+    const displayItems = (items || []).filter(i => !projectFilter || itemProject(i) === projectFilter);
+    if(!displayItems.length) return '';
+    return `
+    <div class="entry-section">
+      <h4><span class="dot ${dotClass}" style="width:7px;height:7px;display:inline-block;border-radius:50%;"></span>${title}</h4>
+      <ul>${displayItems.map(i => `<li>${projectTag(itemProject(i))}${escapeHtml(itemText(i))}</li>`).join('')}</ul>
+    </div>`;
+  };
+
+  const linksHtml = (e.links && e.links.length) ? `
+    <div class="entry-section">
+      <h4>Links</h4>
+      <div class="links-row">${e.links.map(l => `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.label || l.url)}</a>`).join('')}</div>
+    </div>` : '';
+
+  const projects = entryProjects(e);
+  const projectsHtml = projects.length ? `<div class="who-projects">${projects.map(p => `<span class="project-chip">${escapeHtml(p)}</span>`).join('')}</div>` : '';
+
+  const isOwn = currentUser && e.member === currentUser.member;
+  const actionsHtml = isOwn ? `
+    <div class="entry-actions">
+      <button class="edit-entry-btn" onclick="editEntry('${e.id}')">Edit</button>
+      <button class="delete-entry-btn" onclick="deleteEntry('${e.id}', this)">Delete</button>
+    </div>` : '';
+
+  return `<div class="entry">
+    <div class="entry-head">
+      <div class="who">
+        <div class="badge">${initialsFor(e.member)}</div>
+        <div>
+          <div class="who-name">${properName(e.member)}${e.editedAt ? '<span class="edited-tag">(edited)</span>' : ''}</div>
+          ${projectsHtml}
+        </div>
+      </div>
+      ${actionsHtml}
+    </div>
+    ${listSection('Completed today', 'done', e.completed)}
+    ${listSection('Ongoing / not yet finished', 'progress', e.ongoing)}
+    ${obstaclesHtml}
+    ${listSection('Planned next', 'next', e.planned)}
+    ${linksHtml}
+  </div>`;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+document.getElementById('filterMember').addEventListener('change', refreshLog);
+document.getElementById('filterProject').addEventListener('change', refreshLog);
+document.getElementById('filterStatus').addEventListener('change', refreshLog);
+document.getElementById('filterDateFrom').addEventListener('change', () => {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  refreshLog();
+});
+document.getElementById('filterDateTo').addEventListener('change', () => {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  refreshLog();
+});
+
+async function bootApp(){
+  const loader = document.getElementById('initLoader');
+  const loaderSub = document.getElementById('initLoaderSub');
+  loader.classList.remove('hidden');
+
+  if(!BACKEND_URL || BACKEND_URL.indexOf('PASTE_') === 0){
+    const flag = document.getElementById('editingFlag');
+    flag.style.display = 'block';
+    flag.style.color = 'var(--blocked)';
+    flag.style.background = 'var(--blocked-bg)';
+    flag.textContent = 'Backend not connected yet — updates won\'t save.';
+    loader.classList.add('hidden');
+    return;
+  }
+
+  const slowNotice = setTimeout(() => {
+    loaderSub.textContent = 'Still working on it — the Sheet connection can take a few seconds on the first load.';
+  }, 4000);
+
+  try{
+    await loadEntries();
+  }catch(e){
+    loaderSub.textContent = 'Having trouble reaching the backend. Reload the page to try again.';
+    clearTimeout(slowNotice);
+    return;
+  }
+
+  clearTimeout(slowNotice);
+  loader.classList.add('hidden');
+}
+
+(async function initPage(){
+  try{
+    await loadAccounts();
+  }catch(e){
+    console.error('initial accounts load failed', e);
+  }
+
+  const session = getSession();
+  if(session){
+    hideLogin();
+    applyUserToUI(session);
+    document.getElementById('mainApp').style.display = 'block';
+    bootApp();
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
+
