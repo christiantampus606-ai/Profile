@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Christian Loue Tampus — E-Commerce Operations & Marketing Support Specialist</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1237,17 +1238,33 @@
 .case-study-page .cs-confidential-note{margin:0 0 34px;padding:16px 18px;border-left:3px solid var(--accent);background:rgba(255,61,0,.045);font-size:.9rem;line-height:1.6;color:#555}.cs-sample-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:42px}
 .case-study-page .cs-sample-head h2{margin:0}
 .case-study-page .cs-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted-fg)}
-.case-study-page .cs-video-proof{display:flex;justify-content:space-between;align-items:center;gap:30px;margin:0 0 44px;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.case-study-page .cs-video-proof{margin:0 0 52px;padding:26px 0 0;border-top:1px solid var(--border)}
 .case-study-page .cs-video-proof h3{margin:0;font-size:clamp(1.5rem,3vw,2.5rem);letter-spacing:-.04em}
-.case-study-page .cs-video-proof p{margin:8px 0 0;color:var(--muted-fg);font-size:.95rem}
-.case-study-page .cs-video-link{flex:none;border:1px solid var(--fg);padding:13px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--fg);text-decoration:none}
-.case-study-page .cs-video-link:hover{background:var(--fg);color:var(--bg)}
+.case-study-page .cs-video-proof > div:first-child p{margin:8px 0 26px;color:var(--muted-fg);font-size:.95rem;max-width:850px}
+.case-study-page .cs-video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.case-study-page .cs-video-card{display:block;position:relative;overflow:hidden;background:#111;border:1px solid var(--border);cursor:pointer;padding:0;text-align:left;font:inherit;color:inherit}
+.case-study-page .cs-video-card img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;transition:transform .3s ease,opacity .3s ease}
+.case-study-page .cs-video-card:hover img{transform:scale(1.025);opacity:.88}
+.case-study-page .cs-video-play{position:absolute;left:50%;top:50%;width:52px;height:52px;transform:translate(-50%,-50%);display:grid;place-items:center;border:1px solid rgba(255,255,255,.72);background:rgba(10,10,10,.72);color:#fff;transition:background .2s ease,transform .2s ease}
+.case-study-page .cs-video-play::before{content:'';display:block;margin-left:3px;border-left:13px solid currentColor;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.case-study-page .cs-video-card:hover .cs-video-play{background:var(--accent);border-color:var(--accent);transform:translate(-50%,-50%) scale(1.04)}
+.case-study-page .cs-video-caption{display:flex;justify-content:space-between;gap:12px;padding:11px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;background:var(--bg);border-top:1px solid var(--border)}
+.case-study-page .cs-video-caption span:last-child{color:var(--muted-fg)}
+.cs-video-modal{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(10,10,10,.94)}
+.cs-video-modal.active{display:flex}
+.cs-video-modal-inner{width:min(1100px,100%);position:relative}
+.cs-video-frame-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.cs-video-frame-wrap iframe{display:block;width:100%;height:100%;border:0}
+.cs-video-modal-close{position:absolute;right:0;top:-48px;width:38px;height:38px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:25px;line-height:1;cursor:pointer}
+.cs-video-modal-close:hover{background:#fff;color:#0A0A0A}
+.cs-video-modal-label{margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.65)}
 .case-study-page .cs-before-after{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:6px}.case-study-page .cs-compare-item{margin:0}.case-study-page .cs-compare-label{display:inline-block;margin:0 0 10px;padding:7px 10px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg);background:var(--bg)}.case-study-page .cs-compare-item img{max-width:100%;margin:0 auto}.case-study-page .cs-compare-item .cs-caption{display:block}.case-study-page .cs-compare-item .cs-caption span{display:block;margin-top:6px}.case-study-page .cs-compare-item .cs-caption span+span{color:var(--muted-fg)}
 .case-study-page .cs-sample{margin:0 0 56px}
 .case-study-page .cs-fullres-link{display:block;cursor:zoom-in;text-decoration:none}.case-study-page .cs-fullres-link img{transition:opacity .2s ease}.case-study-page .cs-fullres-link:hover img{opacity:.92}.case-study-page .cs-sample img{display:block;width:100%;height:auto;background:white;border:1px solid var(--border)}
 .case-study-page .cs-caption{display:flex;justify-content:space-between;gap:20px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--muted-fg)}
 .case-study-page .cs-footer{padding:60px 0;display:flex;justify-content:space-between;gap:30px;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--muted-fg)}
-@media(max-width:700px){.case-study-page .cs-before-after{grid-template-columns:1fr;gap:36px}.case-study-page .container{width:min(100% - 28px,1180px)}.case-study-page .cs-header{padding:65px 0 55px}.case-study-page .cs-grid{grid-template-columns:1fr;gap:35px}.case-study-page .cs-section{padding:55px 0}.case-study-page .cs-samples{padding:60px 0}.case-study-page .cs-sample{margin-bottom:42px}.case-study-page .cs-caption{display:block}.case-study-page .cs-caption span{display:block;margin-top:5px}.case-study-page .cs-footer{display:block}.case-study-page .cs-footer div+div{margin-top:12px}}
+@media(max-width:900px){.case-study-page .cs-video-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.case-study-page .cs-before-after{grid-template-columns:1fr;gap:36px}.case-study-page .container{width:min(100% - 28px,1180px)}.case-study-page .cs-header{padding:65px 0 55px}.case-study-page .cs-grid{grid-template-columns:1fr;gap:35px}.case-study-page .cs-section{padding:55px 0}.case-study-page .cs-samples{padding:60px 0}.case-study-page .cs-sample{margin-bottom:42px}.case-study-page .cs-caption{display:block}.case-study-page .cs-caption span{display:block;margin-top:5px}.case-study-page .cs-footer{display:block}.case-study-page .cs-footer div+div{margin-top:12px}.case-study-page .cs-video-grid{grid-template-columns:1fr;gap:16px}.cs-video-modal{padding:14px}.cs-video-modal-close{top:-46px}}
 
         /* HERO / ABOUT DISTINCTION */
         /* Keep the opening calm and natural; let the About section shift warmer so the two read as separate chapters. */
@@ -1709,6 +1726,17 @@
 
 
 
+<!-- YouTube video modal: videos play inside the portfolio -->
+<div class="cs-video-modal" id="youtubeVideoModal" aria-hidden="true" onclick="if(event.target===this) closeYouTubeVideo()">
+  <div class="cs-video-modal-inner">
+    <button class="cs-video-modal-close" type="button" onclick="closeYouTubeVideo()" aria-label="Close video">&times;</button>
+    <div class="cs-video-frame-wrap">
+      <iframe id="youtubeVideoFrame" src="" title="YouTube video player" referrerpolicy="origin" allow="autoplay; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+    <div class="cs-video-modal-label" id="youtubeVideoLabel"></div>
+  </div>
+</div>
+
 <!-- Internal Email Lifecycle Case Study: kept inside this single HTML file for Vercel -->
 <div id="caseStudyPage" class="case-study-page" aria-hidden="true">
   <div class="cs-topbar">
@@ -1899,8 +1927,15 @@ socialMedia: [
                 learnedTitle: 'Consistency starts before the post goes live.',
                 learnedText: 'This work gave me practical experience connecting content planning, platform-specific creative, scheduling, and publishing into one organized workflow. The goal was to keep content consistent, timely, and aligned with the brand and campaign priorities.',
                 gallery: 'socialMedia',
-                videoLink: 'https://drive.google.com/drive/folders/1gQaYZsJ8DsOlvRsSs60MMI9_XO_tCqTS?usp=drive_link',
-                videoLabel: 'View video work samples'
+                videoSamples: [
+                    { id: 'rmy9v7ksiD8', label: 'Social campaign / 01' },
+                    { id: 'l-GZYTzl2XQ', label: 'Social campaign / 02' },
+                    { id: 'zPLomXLLLew', label: 'Social campaign / 03' },
+                    { id: 'lHbKNWpNE0E', label: 'Social campaign / 04' },
+                    { id: '-CMuQC1u-7I', label: 'Social campaign / 05' },
+                    { id: 'eOhccgu8_AM', label: 'Social campaign / 06' },
+                    { id: 'jlsRDGLmSrs', label: 'Social campaign / 07' }
+                ]
             },
             webredesign: {
                 meta: '06 / WEB DESIGN',
@@ -1939,6 +1974,29 @@ socialMedia: [
 
         let activeCaseStudy = null;
 
+        function openYouTubeVideo(videoId, label = '') {
+            const modal = document.getElementById('youtubeVideoModal');
+            const frame = document.getElementById('youtubeVideoFrame');
+            const caption = document.getElementById('youtubeVideoLabel');
+            if (!modal || !frame) return;
+            const embedOrigin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'https://take1-iota.vercel.app';
+            frame.src = 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0&enablejsapi=1&origin=' + encodeURIComponent(embedOrigin) + '&widget_referrer=' + encodeURIComponent(window.location.href);
+            if (caption) caption.textContent = label;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden','false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeYouTubeVideo() {
+            const modal = document.getElementById('youtubeVideoModal');
+            const frame = document.getElementById('youtubeVideoFrame');
+            if (!modal) return;
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden','true');
+            if (frame) frame.src = '';
+            document.body.style.overflow = document.getElementById('caseStudyPage')?.classList.contains('active') ? 'hidden' : '';
+        }
+
         function renderCaseStudy(key = 'klaviyo') {
             const page = document.getElementById('caseStudyPage');
             const samples = document.getElementById('caseStudySamples');
@@ -1961,8 +2019,8 @@ socialMedia: [
             const confidentialityNote = (key === 'platform' || key === 'social' || key === 'webredesign')
                 ? '<p class="cs-confidential-note">Please note: some identifying details, account information, product data, and other client-specific elements in these work samples have been edited, anonymized, or redacted for confidentiality. The workflows and type of work shown are representative of the actual work performed.</p>'
                 : '';
-            const videoProof = data.videoLink
-                ? `<div class="cs-video-proof"><div><div class="cs-label" style="margin-bottom:10px">Video Work Samples</div><h3>Selected campaign videos.</h3><p>I also create short-form video content for selected social media campaigns and other digital channels. The samples here highlight some of the campaign videos I’ve produced as part of broader content and marketing work.</p></div><a class="cs-video-link" href="${data.videoLink}" target="_blank" rel="noopener noreferrer">${data.videoLabel || 'View video work samples'} ↗</a></div>`
+            const videoProof = data.videoSamples
+                ? `<div class="cs-video-proof"><div><div class="cs-label" style="margin-bottom:10px">Video Work Samples</div><h3>Selected campaign videos.</h3><p>I also create short-form video content for selected social media campaigns and other digital channels. Click any thumbnail to watch the video without leaving this portfolio.</p></div><div class="cs-video-grid">${data.videoSamples.map((video, index) => `<button class="cs-video-card" type="button" onclick="openYouTubeVideo('${video.id}', '${video.label.replace(/'/g, "\\'")}')" aria-label="Play ${video.label}"><img src="https://i.ytimg.com/vi/${video.id}/hqdefault.jpg" alt="${video.label}" loading="lazy"><span class="cs-video-play" aria-hidden="true"></span><span class="cs-video-caption"><span>${String(index + 1).padStart(2,'0')} / ${video.label}</span><span>Play ↗</span></span></button>`).join('')}</div></div>`
                 : '';
             const sampleMarkup = data.comparison && items.length === 2
                 ? `<div class="cs-before-after">${items.map((item, index) => `
@@ -2003,7 +2061,7 @@ socialMedia: [
         }
 
         function syncCaseStudyFromHash() {
-            const match = location.hash.match(/^#case-study\/(klaviyo|amazon|platform|defense|social)$/);
+            const match = location.hash.match(/^#case-study\/(klaviyo|amazon|platform|defense|social|webredesign)$/);
             if (match) {
                 renderCaseStudy(match[1]);
                 const page = document.getElementById('caseStudyPage');
@@ -2068,6 +2126,11 @@ socialMedia: [
         }, { passive: false });
 
         document.addEventListener('keydown', (e) => {
+            const videoModal = document.getElementById('youtubeVideoModal');
+            if (videoModal && videoModal.classList.contains('active')) {
+                if (e.key === 'Escape') closeYouTubeVideo();
+                return;
+            }
             const overlay = document.getElementById('lightboxOverlay');
             if (!overlay.classList.contains('active')) return;
             if (e.key === 'Escape') closeLightbox();
@@ -2089,7 +2152,7 @@ socialMedia: [
             navMobileMenu.classList.remove('active');
             document.body.style.overflow = '';
         }
-        if (/^#case-study\/(klaviyo|amazon|defense)$/.test(location.hash)) syncCaseStudyFromHash();
+        if (/^#case-study\/(klaviyo|amazon|platform|defense|social|webredesign)$/.test(location.hash)) syncCaseStudyFromHash();
     </script>
 </body>
 </html>
